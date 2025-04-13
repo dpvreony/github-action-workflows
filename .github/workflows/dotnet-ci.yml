@@ -286,8 +286,7 @@ jobs:
 
     - name: Prepare Artifact Directory
       run: |
-        mkdir artifacts
-        mkdir artifacts\licenses
+        mkdir -p artifacts/licenses
 
     - name: Restore Packages
       run: |
