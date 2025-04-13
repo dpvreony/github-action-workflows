@@ -285,7 +285,7 @@ jobs:
 
     - name: List licenses
       run: |
-        dotnet nuget-license -i ../../src/${{ env.solutionpath }} -t -o Json --fo ../../artifacts/licenses/licenses.json
+        dotnet nuget-license -i ../../src/${{ env.solutionpath }} -t -o Json -fo ../../artifacts/licenses/licenses.json
       working-directory: 
         eng/licenses
 
