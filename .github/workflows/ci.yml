@@ -1,4 +1,4 @@
-name: .NET Core
+name: CI
 
 on:
   push:
@@ -18,7 +18,7 @@ jobs:
       deployments: read
       pages: write
       id-token: write
-    uses: dotnet-ci.yml
+    uses: ./.github/workflows/dotnet-ci.yml
     with:
       solutionName: "Workflow"
 
