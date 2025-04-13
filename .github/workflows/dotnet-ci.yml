@@ -273,10 +273,10 @@ jobs:
     - name: Install .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '8.0.x'
+        global-json-file: "./eng/licenses/global.json"
 
     - name: Install dotnet tools
-      run: dotnet tool restore --tool-manifest .config/licenses/dotnet-tools.json
+      run: dotnet tool restore --tool-manifest eng/licenses/dotnet-tools.json
 
     - name: Prepare Artifact Directory
       run: |
@@ -285,7 +285,9 @@ jobs:
 
     - name: List licenses
       run: |
-        dotnet nuget-licenses -i src/${{ env.solutionpath }} -t -o Json --export-license-texts --fo artifacts/licenses/licenses.json
+        dotnet nuget-licenses -i ../../src/${{ env.solutionpath }} -t -o Json --export-license-texts --fo ../../artifacts/licenses/licenses.json
+      working-directory: 
+        eng/licenses
 
     - name: store licenses
       uses: actions/upload-artifact@v4
@@ -293,25 +295,25 @@ jobs:
         name: licenses
         path: artifacts/licenses
 
-  #snitch:
-  #  runs-on: ubuntu-latest
-  #  steps:
-  #  - name: Checkout code
-  #    uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+  snitch:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
-  #  - name: Install dotnet tools
-  #    run: dotnet tool restore --tool-manifest .config/snitch.json
+    - name: Install dotnet tools
+      run: dotnet tool restore --tool-manifest .config/snitch.json
 
-  #  - name: run snitch
-  #    run: |
-  #      snitch ${{ env.solutionpath }}
-  #    working-directory: src
+    - name: run snitch
+      run: |
+        snitch ${{ env.solutionpath }}
+      working-directory: src
 
-  #  - name: store snitch
-  #    uses: actions/upload-artifact@v4
-  #    with:
-  #      name: snitch
-  #      path: artifacts/snitch
+    - name: store snitch
+      uses: actions/upload-artifact@v4
+      with:
+        name: snitch
+        path: artifacts/snitch
 
   appinspector:
     runs-on: ubuntu-latest
@@ -322,10 +324,10 @@ jobs:
     - name: Install .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '9.0.x'
+        global-json-file: "./eng/appinspector/global.json"
         
     - name: Install dotnet tools
-      run: dotnet tool restore --tool-manifest .config/appinspector.json
+      run: dotnet tool restore --tool-manifest eng/appinspector/dotnet-tools.json
 
     - name: Prepare Artifact Directory
       run: |
@@ -334,7 +336,9 @@ jobs:
 
     - name: Generate App Inspector Report
       run: |
-        dotnet appinspector analyze -s src -f html -o artifacts\appinspector\appinspector.html
+        dotnet appinspector analyze -s src -f html -o ../../artifacts/appinspector/appinspector.html
+      working-directory: 
+         eng/appinspector
 
     - name: store appinspector
       uses: actions/upload-artifact@v4
