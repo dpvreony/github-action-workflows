@@ -273,10 +273,10 @@ jobs:
     - name: Install .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '7.0.x'
+        dotnet-version: '8.0.x'
 
     - name: Install dotnet tools
-      run: dotnet tool restore --tool-manifest .config/dotnet-project-licenses.json
+      run: dotnet tool restore --tool-manifest .config/licenses/dotnet-tools.json
 
     - name: Prepare Artifact Directory
       run: |
@@ -285,7 +285,7 @@ jobs:
 
     - name: List licenses
       run: |
-        dotnet dotnet-project-licenses -i src --export-license-texts --output-directory artifacts/licenses
+        dotnet nuget-licenses -i src/${{ env.solutionpath }} -t -o Json --export-license-texts --fo artifacts/licenses/licenses.json
 
     - name: store licenses
       uses: actions/upload-artifact@v4
