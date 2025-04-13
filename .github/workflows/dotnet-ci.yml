@@ -289,6 +289,11 @@ jobs:
         mkdir artifacts
         mkdir artifacts\licenses
 
+    - name: Restore Packages
+      run: |
+        dotnet restore ${{ env.solutionpath }} -- /bl:artifacts\\binlog\\restore.binlog
+      working-directory: src
+
     - name: List licenses
       run: |
         dotnet nuget-license -i ../../src/${{ env.solutionpath }} -t -o Json -fo ../../artifacts/licenses/licenses.json
