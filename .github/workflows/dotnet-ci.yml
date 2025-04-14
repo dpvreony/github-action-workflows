@@ -302,6 +302,7 @@ jobs:
         eng/licenses
 
     - name: store licenses
+      if: ${{ always() }}
       uses: actions/upload-artifact@v4
       with:
         name: licenses
@@ -331,11 +332,12 @@ jobs:
 
     - name: run snitch
       run: |
-        dotnet snitch ../../src/${{ env.solutionpath }}
+        dotnet snitch ../../src/${{ env.solutionpath }} > ../../artifacts/snitch/snitch.txt
       working-directory:
         eng/snitch
 
     - name: store snitch
+      if: ${{ always() }}
       uses: actions/upload-artifact@v4
       with:
         name: snitch
@@ -368,6 +370,7 @@ jobs:
          eng/appinspector
 
     - name: store appinspector
+      if: ${{ always() }}
       uses: actions/upload-artifact@v4
       with:
         name: appinspector
