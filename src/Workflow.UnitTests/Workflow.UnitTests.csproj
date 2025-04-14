@@ -22,6 +22,6 @@
     <PackageReference Include="xunit.v3" Version="2.0.1" />
     <PackageReference Include="xunit.analyzers" Version="1.21.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.0.2" />
-    <PackageReference Include="Xunit.StaFact" Version="2.1.4-alpha" />
+    <PackageReference Include="Xunit.StaFact" Version="2.1.7" />
   </ItemGroup>
 </Project>
