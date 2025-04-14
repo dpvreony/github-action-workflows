@@ -317,6 +317,11 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
+    - name: Install .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        global-json-file: "./eng/snitch/global.json"
+
     - name: Install dotnet tools
       run: dotnet tool restore --tool-manifest .config/snitch.json
 
@@ -347,12 +352,11 @@ jobs:
 
     - name: Prepare Artifact Directory
       run: |
-        mkdir artifacts
-        mkdir artifacts\appinspector
+        mkdir -p artifacts/appinspector
 
     - name: Generate App Inspector Report
       run: |
-        dotnet appinspector analyze -s src -f html -o ../../artifacts/appinspector/appinspector.html
+        dotnet appinspector analyze -s ../../src -f html -o ../../artifacts/appinspector/appinspector.html
       working-directory: 
          eng/appinspector
 
