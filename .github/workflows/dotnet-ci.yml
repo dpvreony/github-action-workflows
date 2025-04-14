@@ -282,7 +282,9 @@ jobs:
         global-json-file: "./eng/licenses/global.json"
 
     - name: Install dotnet tools
-      run: dotnet tool restore --tool-manifest eng/licenses/dotnet-tools.json
+      run: dotnet tool restore --tool-manifest dotnet-tools.json
+      working-directory:
+        eng/licenses
 
     - name: Prepare Artifact Directory
       run: |
@@ -296,7 +298,7 @@ jobs:
     - name: List licenses
       run: |
         dotnet nuget-license -i ../../src/${{ env.solutionpath }} -t -o Json -fo ../../artifacts/licenses/licenses.json
-      working-directory: 
+      working-directory:
         eng/licenses
 
     - name: store licenses
@@ -323,12 +325,15 @@ jobs:
         global-json-file: "./eng/snitch/global.json"
 
     - name: Install dotnet tools
-      run: dotnet tool restore --tool-manifest .config/snitch.json
+      run: dotnet tool restore --tool-manifest dotnet-tools.json
+      working-directory:
+        eng/snitch
 
     - name: run snitch
       run: |
-        snitch ${{ env.solutionpath }}
-      working-directory: src
+        snitch ../../src/${{ env.solutionpath }}
+      working-directory:
+        eng/snitch
 
     - name: store snitch
       uses: actions/upload-artifact@v4
@@ -349,6 +354,8 @@ jobs:
         
     - name: Install dotnet tools
       run: dotnet tool restore --tool-manifest eng/appinspector/dotnet-tools.json
+      working-directory:
+        eng/appinspector
 
     - name: Prepare Artifact Directory
       run: |
