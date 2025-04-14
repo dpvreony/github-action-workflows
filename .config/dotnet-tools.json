@@ -45,7 +45,7 @@
       "rollForward": false
     },
     "microsoft.cst.applicationinspector.cli": {
-      "version": "1.9.34",
+      "version": "1.9.36",
       "commands": [
         "appinspector"
       ],
