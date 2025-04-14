@@ -363,7 +363,7 @@ jobs:
 
     - name: Generate App Inspector Report
       run: |
-        dotnet appinspector analyze -s ../../src -f html -o ../../artifacts/appinspector/appinspector.html
+        dotnet appinspector analyze --no-show-progress -s ../../src -f html -o ../../artifacts/appinspector/appinspector.html
       working-directory: 
          eng/appinspector
 
