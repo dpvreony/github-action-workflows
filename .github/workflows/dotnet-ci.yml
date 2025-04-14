@@ -331,7 +331,7 @@ jobs:
 
     - name: run snitch
       run: |
-        snitch ../../src/${{ env.solutionpath }}
+        dotnet snitch ../../src/${{ env.solutionpath }}
       working-directory:
         eng/snitch
 
@@ -353,7 +353,7 @@ jobs:
         global-json-file: "./eng/appinspector/global.json"
         
     - name: Install dotnet tools
-      run: dotnet tool restore --tool-manifest eng/appinspector/dotnet-tools.json
+      run: dotnet tool restore --tool-manifest dotnet-tools.json
       working-directory:
         eng/appinspector
 
