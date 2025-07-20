@@ -110,7 +110,7 @@ jobs:
 
     - name: Restore Packages
       run: |
-        dotnet restore ${{ env.solutionpath }} -- /bl:$GITHUB_WORKSPACE\\artifacts\\binlog\\restore.binlog
+        dotnet restore ${{ env.solutionpath }} -- /bl:{{ github.workspace }}\\artifacts\\binlog\\restore.binlog
       working-directory: src
 
     #- name: List Deprecated Packages
@@ -146,7 +146,7 @@ jobs:
     - name: Run Sonar Scanner begin
       if: env.SONAR_TOKEN != '' && env.SONAR_PROJECT_KEY != '' && env.SONAR_ORGANISATION_KEY != ''
       run: |
-        dotnet sonarscanner begin /k:"${{ env.SONAR_PROJECT_KEY }}" /d:sonar.login="${{ env.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /o:"${{ env.SONAR_ORGANISATION_KEY }}" /d:sonar.cs.opencover.reportsPaths="$GITHUB_WORKSPACE/artifacts/unittestcoverage/**/*.xml"
+        dotnet sonarscanner begin /k:"${{ env.SONAR_PROJECT_KEY }}" /d:sonar.login="${{ env.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /o:"${{ env.SONAR_ORGANISATION_KEY }}" /d:sonar.cs.opencover.reportsPaths="{{ github.workspace }}/artifacts/unittestcoverage/**/*.xml"
       working-directory: src
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -155,7 +155,7 @@ jobs:
 
     - name: Run Build
       run: |
-        dotnet build ${{ env.solutionpath }} --configuration Release --no-restore /bl:$GITHUB_WORKSPACE/artifacts/binlog/build.binlog /p:ContinuousIntegrationBuild=true 
+        dotnet build ${{ env.solutionpath }} --configuration Release --no-restore /bl:{{ github.workspace }}/artifacts/binlog/build.binlog /p:ContinuousIntegrationBuild=true 
       working-directory: src
       env:
         CHANGE_COMMIT_LOG: ${{ steps.changelog.outputs.commitLog }}
@@ -163,7 +163,7 @@ jobs:
     - name: Run Unit Tests
       working-directory: src
       run: |
-        dotnet test ${{ env.unittestprojectpath }} --configuration Release --no-build /bl:$GITHUB_WORKSPACE\\artifacts/binlog/unittest.binlog --nologo --logger GitHubActions --blame-hang-timeout 60000 --results-directory $GITHUB_WORKSPACE/artifacts/unittestcoverage -- /p:DeterministicSourcePaths=false -- --coverage --coverage-output-format cobertura --coverage-output coverage.xml
+        dotnet test ${{ env.unittestprojectpath }} --configuration Release --no-build /bl:{{ github.workspace }}\\artifacts/binlog/unittest.binlog --nologo --logger GitHubActions --blame-hang-timeout 60000 --results-directory {{ github.workspace }}/artifacts/unittestcoverage -- /p:DeterministicSourcePaths=false -- --coverage --coverage-output-format cobertura --coverage-output coverage.xml
 
     - name: Run Sonar Scanner end
       if: env.SONAR_TOKEN != '' && env.SONAR_PROJECT_KEY != '' && env.SONAR_ORGANISATION_KEY != ''
@@ -194,7 +194,7 @@ jobs:
     # integration tests run after sonarscanner and unit test reporting so if the integration tests fail the report still uploads so we can see defects detected by sonarscanner and any unit test coverage issues.
     - name: Run Integration Tests
       run: |
-        dotnet test ${{ env.inttestprojectpath }} --configuration Release --no-build /bl:artifacts/binlog/inttest.binlog --nologo --logger GitHubActions --blame-hang-timeout 60000 --results-directory $GITHUB_WORKSPACE/artifacts/inttestcoverage -- /p:DeterministicSourcePaths=false -- --coverage --coverage-output-format cobertura --coverage-output coverage.xml
+        dotnet test ${{ env.inttestprojectpath }} --configuration Release --no-build /bl:artifacts/binlog/inttest.binlog --nologo --logger GitHubActions --blame-hang-timeout 60000 --results-directory {{ github.workspace }}/artifacts/inttestcoverage -- /p:DeterministicSourcePaths=false -- --coverage --coverage-output-format cobertura --coverage-output coverage.xml
       working-directory: src
 
     - name: Report Integration Test Coverage
@@ -207,7 +207,7 @@ jobs:
 
     - name: Produce Nuget Packages
       run: |
-        dotnet pack ${{ env.solutionpath }} --configuration Release --no-build /bl:$GITHUB_WORKSPACE\\artifacts\\binlog\\pack.binlog --nologo /p:PackageOutputPath=$GITHUB_WORKSPACE\artifacts\nuget /p:ContinuousIntegrationBuild=true
+        dotnet pack ${{ env.solutionpath }} --configuration Release --no-build /bl:{{ github.workspace }}\\artifacts\\binlog\\pack.binlog --nologo /p:PackageOutputPath={{ github.workspace }}\artifacts\nuget /p:ContinuousIntegrationBuild=true
       working-directory: src
       env:
         CHANGE_COMMIT_LOG: ${{ steps.changelog.outputs.commitLog }}
@@ -218,7 +218,7 @@ jobs:
 
     - name: List outdated packages
       run: |
-        dotnet outdated -o $GITHUB_WORKSPACE\artifacts\outdated\outdated.json
+        dotnet outdated -o {{ github.workspace }}\artifacts\outdated\outdated.json
       working-directory: src
 
     - name: VirusTotal Monitor Scan
@@ -310,7 +310,7 @@ jobs:
 
     - name: List licenses
       run: |
-        dotnet nuget-license -i $GITHUB_WORKSPACE/src/${{ env.solutionpath }} -t -o Json -fo $GITHUB_WORKSPACE/artifacts/licenses/licenses.json
+        dotnet nuget-license -i {{ github.workspace }}/src/${{ env.solutionpath }} -t -o Json -fo {{ github.workspace }}/artifacts/licenses/licenses.json
       working-directory:
         ../github-action-workflows/eng/licenses
 
@@ -355,7 +355,7 @@ jobs:
 
     - name: run snitch
       run: |
-        dotnet snitch $GITHUB_WORKSPACE/src/${{ env.solutionpath }} > $GITHUB_WORKSPACE/artifacts/snitch/snitch.txt
+        dotnet snitch {{ github.workspace }}/src/${{ env.solutionpath }} > {{ github.workspace }}/artifacts/snitch/snitch.txt
       working-directory:
         ../github-action-workflows/eng/snitch
 
@@ -394,7 +394,7 @@ jobs:
 
     - name: Generate App Inspector Report
       run: |
-        dotnet appinspector analyze --no-show-progress -s $GITHUB_WORKSPACE/src -f html -o $GITHUB_WORKSPACE/artifacts/appinspector/appinspector.html
+        dotnet appinspector analyze --no-show-progress -s {{ github.workspace }}/src -f html -o {{ github.workspace }}/artifacts/appinspector/appinspector.html
       working-directory: 
          ../github-action-workflows/eng/appinspector
 
