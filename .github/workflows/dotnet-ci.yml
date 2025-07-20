@@ -388,7 +388,9 @@ jobs:
         path: artifacts/appinspector
 
   check-nuget-environment:
-    if: secrets.NUGET_API_KEY != ''
+    if: env.NUGET_AUTH_TOKEN != ''
+    env:
+        NUGET_AUTH_TOKEN: ${{ secrets.NUGET_API_KEY }}
     permissions:
       actions: read
       contents: read
