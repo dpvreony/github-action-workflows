@@ -284,10 +284,10 @@ jobs:
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
     - name: Checkout dpvreony/github-action-workflow
-      if: github.repository != 'dpvreony/github-action-workflow'
+      if: github.repository != 'dpvreony/github-action-workflows'
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       with:
-        repository: dpvreony/github-action-workflow
+        repository: dpvreony/github-action-workflows
 
     - name: Install .NET
       uses: actions/setup-dotnet@v4
@@ -334,10 +334,10 @@ jobs:
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
     - name: Checkout dpvreony/github-action-workflow
-      if: github.repository != 'dpvreony/github-action-workflow'
+      if: github.repository != 'dpvreony/github-action-workflows'
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       with:
-        repository: dpvreony/github-action-workflow
+        repository: dpvreony/github-action-workflows
 
     - name: Install .NET
       uses: actions/setup-dotnet@v4
@@ -373,10 +373,10 @@ jobs:
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
     - name: Checkout dpvreony/github-action-workflow
-      if: github.repository != 'dpvreony/github-action-workflow'
+      if: github.repository != 'dpvreony/github-action-workflows'
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       with:
-        repository: dpvreony/github-action-workflow
+        repository: dpvreony/github-action-workflows
 
     - name: Install .NET
       uses: actions/setup-dotnet@v4
