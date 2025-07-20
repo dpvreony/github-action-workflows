@@ -21,8 +21,7 @@ on:
         required: false
       CODECOV_TOKEN:
         required: false
-        
-  
+
 jobs:
   build:
     runs-on: windows-2025
@@ -288,6 +287,7 @@ jobs:
       uses: actions/checkout@09d2acae674a48949e3602304ab46fd20ae0c42f
       with:
         repository: dpvreony/github-action-workflows
+        path: ../github-action-workflows
 
     - name: Install .NET
       uses: actions/setup-dotnet@v4
@@ -338,6 +338,7 @@ jobs:
       uses: actions/checkout@09d2acae674a48949e3602304ab46fd20ae0c42f
       with:
         repository: dpvreony/github-action-workflows
+        path: ../github-action-workflows
 
     - name: Install .NET
       uses: actions/setup-dotnet@v4
@@ -377,6 +378,7 @@ jobs:
       uses: actions/checkout@09d2acae674a48949e3602304ab46fd20ae0c42f
       with:
         repository: dpvreony/github-action-workflows
+        path: ../github-action-workflows
 
     - name: Install .NET
       uses: actions/setup-dotnet@v4
