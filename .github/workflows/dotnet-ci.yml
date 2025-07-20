@@ -387,13 +387,29 @@ jobs:
         name: appinspector
         path: artifacts/appinspector
 
+  check-nuget-api-key:
+    runs-on: ubuntu-latest
+    outputs:
+      has_api_key: ${{ steps.check.outputs.has_api_key }}
+    steps:
+      - name: Check if NUGET_API_KEY is set
+        id: check
+        run: |
+          if [ -n "${{ secrets.nuget_api_key }}" ]; then
+            echo "has_api_key=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_api_key=false" >> "$GITHUB_OUTPUT"
+          fi
+          
   check-nuget-environment:
     permissions:
       actions: read
       contents: read
       deployments: read
     runs-on: ubuntu-latest
-    if: ${{ secrets.nuget_api_key != '' }}
+    needs:
+      check-nuget-api-key
+    if: needs.check-nuget-api-key.outputs.has_api_key == 'true'
     steps:
       - name: Check if 'nuget' environment exists and has protection rules
         uses: dpvreony/ensure-environment-protected@main
