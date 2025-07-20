@@ -7,10 +7,21 @@ on:
         required: true
         type: string
         description: 'Name of the solution file WITHOUT the extension. On top of running the build. It is ued to calculate the format of the unit tests, benchmarks and integration tests.'
+    secrets:
+      NUGET_API_KEY:
+        required: false
+        description: 'API key used to release NUGET packages'
+      SONAR_TOKEN:
+        required: false
+      SONAR_PROJECT_KEY:
+        required: false
+      SONAR_ORGANISATION_KEY:
+        required: false
+      VIRUSTOTAL_API_KEY:
+        required: false
+      CODECOV_TOKEN:
+        required: false
         
-concurrency:
-  group: ${{ github.repository }}-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
   
 jobs:
   build:
@@ -377,6 +388,7 @@ jobs:
         path: artifacts/appinspector
 
   check-nuget-environment:
+    if: secrets.NUGET_API_KEY != ''
     permissions:
       actions: read
       contents: read
