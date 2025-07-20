@@ -281,13 +281,15 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      with:
+        path: a
 
     - name: Checkout dpvreony/github-action-workflow
       if: github.repository != 'dpvreony/github-action-workflows'
       uses: actions/checkout@09d2acae674a48949e3602304ab46fd20ae0c42f
       with:
         repository: dpvreony/github-action-workflows
-        path: ../github-action-workflows
+        path: github-action-workflows
 
     - name: Install .NET
       uses: actions/setup-dotnet@v4
@@ -310,7 +312,7 @@ jobs:
 
     - name: List licenses
       run: |
-        dotnet nuget-license -i ${{ github.workspace }}/src/${{ env.solutionpath }} -t -o Json -fo ${{ github.workspace }}/artifacts/licenses/licenses.json
+        dotnet nuget-license -i ${{ github.workspace }}/a/src/${{ env.solutionpath }} -t -o Json -fo ${{ github.workspace }}/artifacts/licenses/licenses.json
       working-directory:
         ../github-action-workflows/eng/licenses
 
@@ -332,13 +334,15 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      with:
+        path: a
 
     - name: Checkout dpvreony/github-action-workflow
       if: github.repository != 'dpvreony/github-action-workflows'
       uses: actions/checkout@09d2acae674a48949e3602304ab46fd20ae0c42f
       with:
         repository: dpvreony/github-action-workflows
-        path: ../github-action-workflows
+        path: github-action-workflows
 
     - name: Install .NET
       uses: actions/setup-dotnet@v4
@@ -356,7 +360,7 @@ jobs:
 
     - name: run snitch
       run: |
-        dotnet snitch ${{ github.workspace }}/src/${{ env.solutionpath }} > ${{ github.workspace }}/artifacts/snitch/snitch.txt
+        dotnet snitch ${{ github.workspace }}/a/src/${{ env.solutionpath }} > ${{ github.workspace }}/artifacts/snitch/snitch.txt
       working-directory:
         ../github-action-workflows/eng/snitch
 
@@ -372,6 +376,8 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      with:
+        path: a
 
     - name: Checkout dpvreony/github-action-workflow
       if: github.repository != 'dpvreony/github-action-workflows'
@@ -396,7 +402,7 @@ jobs:
 
     - name: Generate App Inspector Report
       run: |
-        dotnet appinspector analyze --no-show-progress -s ${{ github.workspace }}/src -f html -o ${{ github.workspace }}/artifacts/appinspector/appinspector.html
+        dotnet appinspector analyze --no-show-progress -s ${{ github.workspace }}/a/src -f html -o ${{ github.workspace }}/artifacts/appinspector/appinspector.html
       working-directory: 
          ../github-action-workflows/eng/appinspector
 
