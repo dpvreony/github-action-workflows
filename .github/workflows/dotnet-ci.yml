@@ -285,7 +285,6 @@ jobs:
         path: a
 
     - name: Checkout dpvreony/github-action-workflow
-      if: github.repository != 'dpvreony/github-action-workflows'
       uses: actions/checkout@09d2acae674a48949e3602304ab46fd20ae0c42f
       with:
         repository: dpvreony/github-action-workflows
@@ -294,12 +293,12 @@ jobs:
     - name: Install .NET
       uses: actions/setup-dotnet@v4
       with:
-        global-json-file: "../github-action-workflows/eng/licenses/global.json"
+        global-json-file: "github-action-workflows/eng/licenses/global.json"
 
     - name: Install dotnet tools
       run: dotnet tool restore --tool-manifest dotnet-tools.json
       working-directory:
-        ../github-action-workflows/eng/licenses
+        github-action-workflows/eng/licenses
 
     - name: Prepare Artifact Directory
       run: |
@@ -314,7 +313,7 @@ jobs:
       run: |
         dotnet nuget-license -i ${{ github.workspace }}/a/src/${{ env.solutionpath }} -t -o Json -fo ${{ github.workspace }}/artifacts/licenses/licenses.json
       working-directory:
-        ../github-action-workflows/eng/licenses
+        github-action-workflows/eng/licenses
 
     - name: store licenses
       if: ${{ always() }}
@@ -338,7 +337,6 @@ jobs:
         path: a
 
     - name: Checkout dpvreony/github-action-workflow
-      if: github.repository != 'dpvreony/github-action-workflows'
       uses: actions/checkout@09d2acae674a48949e3602304ab46fd20ae0c42f
       with:
         repository: dpvreony/github-action-workflows
@@ -347,12 +345,12 @@ jobs:
     - name: Install .NET
       uses: actions/setup-dotnet@v4
       with:
-        global-json-file: "../github-action-workflows/eng/snitch/global.json"
+        global-json-file: "github-action-workflows/eng/snitch/global.json"
 
     - name: Install dotnet tools
       run: dotnet tool restore --tool-manifest dotnet-tools.json
       working-directory:
-        ../github-action-workflows/eng/snitch
+        github-action-workflows/eng/snitch
 
     - name: Prepare Artifact Directory
       run: |
@@ -362,7 +360,7 @@ jobs:
       run: |
         dotnet snitch ${{ github.workspace }}/a/src/${{ env.solutionpath }} > ${{ github.workspace }}/artifacts/snitch/snitch.txt
       working-directory:
-        ../github-action-workflows/eng/snitch
+        github-action-workflows/eng/snitch
 
     - name: store snitch
       if: ${{ always() }}
@@ -380,21 +378,20 @@ jobs:
         path: a
 
     - name: Checkout dpvreony/github-action-workflow
-      if: github.repository != 'dpvreony/github-action-workflows'
       uses: actions/checkout@09d2acae674a48949e3602304ab46fd20ae0c42f
       with:
         repository: dpvreony/github-action-workflows
-        path: ../github-action-workflows
+        path: github-action-workflows
 
     - name: Install .NET
       uses: actions/setup-dotnet@v4
       with:
-        global-json-file: "../github-action-workflows/eng/appinspector/global.json"
+        global-json-file: "github-action-workflows/eng/appinspector/global.json"
         
     - name: Install dotnet tools
       run: dotnet tool restore --tool-manifest dotnet-tools.json
       working-directory:
-        ../github-action-workflows/eng/appinspector
+        github-action-workflows/eng/appinspector
 
     - name: Prepare Artifact Directory
       run: |
@@ -404,7 +401,7 @@ jobs:
       run: |
         dotnet appinspector analyze --no-show-progress -s ${{ github.workspace }}/a/src -f html -o ${{ github.workspace }}/artifacts/appinspector/appinspector.html
       working-directory: 
-         ../github-action-workflows/eng/appinspector
+         github-action-workflows/eng/appinspector
 
     - name: store appinspector
       if: ${{ always() }}
