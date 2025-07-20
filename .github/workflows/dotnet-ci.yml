@@ -297,7 +297,7 @@ jobs:
     - name: Install dotnet tools
       run: dotnet tool restore --tool-manifest dotnet-tools.json
       working-directory:
-        ../github-action-workflow/eng/licenses
+        ../github-action-workflows/eng/licenses
 
     - name: Prepare Artifact Directory
       run: |
@@ -342,7 +342,7 @@ jobs:
     - name: Install .NET
       uses: actions/setup-dotnet@v4
       with:
-        global-json-file: "../github-action-workflow/eng/snitch/global.json"
+        global-json-file: "../github-action-workflows/eng/snitch/global.json"
 
     - name: Install dotnet tools
       run: dotnet tool restore --tool-manifest dotnet-tools.json
@@ -381,7 +381,7 @@ jobs:
     - name: Install .NET
       uses: actions/setup-dotnet@v4
       with:
-        global-json-file: "../github-action-workflow/eng/appinspector/global.json"
+        global-json-file: "../github-action-workflows/eng/appinspector/global.json"
         
     - name: Install dotnet tools
       run: dotnet tool restore --tool-manifest dotnet-tools.json
