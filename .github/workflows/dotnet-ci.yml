@@ -292,7 +292,7 @@ jobs:
     - name: Install .NET
       uses: actions/setup-dotnet@v4
       with:
-        global-json-file: "../github-action-workflow/eng/licenses/global.json"
+        global-json-file: "../github-action-workflows/eng/licenses/global.json"
 
     - name: Install dotnet tools
       run: dotnet tool restore --tool-manifest dotnet-tools.json
@@ -312,7 +312,7 @@ jobs:
       run: |
         dotnet nuget-license -i {{ $GITHUB_WORKSPACE }}/src/${{ env.solutionpath }} -t -o Json -fo {{ $GITHUB_WORKSPACE }}/artifacts/licenses/licenses.json
       working-directory:
-        ../github-action-workflow/eng/licenses
+        ../github-action-workflows/eng/licenses
 
     - name: store licenses
       if: ${{ always() }}
@@ -347,7 +347,7 @@ jobs:
     - name: Install dotnet tools
       run: dotnet tool restore --tool-manifest dotnet-tools.json
       working-directory:
-        ../github-action-workflow/eng/snitch
+        ../github-action-workflows/eng/snitch
 
     - name: Prepare Artifact Directory
       run: |
@@ -357,7 +357,7 @@ jobs:
       run: |
         dotnet snitch {{ $GITHUB_WORKSPACE }}/src/${{ env.solutionpath }} > {{ $GITHUB_WORKSPACE }}/artifacts/snitch/snitch.txt
       working-directory:
-        ../github-action-workflow/eng/snitch
+        ../github-action-workflows/eng/snitch
 
     - name: store snitch
       if: ${{ always() }}
@@ -386,7 +386,7 @@ jobs:
     - name: Install dotnet tools
       run: dotnet tool restore --tool-manifest dotnet-tools.json
       working-directory:
-        ../github-action-workflow/eng/appinspector
+        ../github-action-workflows/eng/appinspector
 
     - name: Prepare Artifact Directory
       run: |
@@ -396,7 +396,7 @@ jobs:
       run: |
         dotnet appinspector analyze --no-show-progress -s {{ $GITHUB_WORKSPACE }}/src -f html -o {{ $GITHUB_WORKSPACE }}/artifacts/appinspector/appinspector.html
       working-directory: 
-         ../github-action-workflow/eng/appinspector
+         ../github-action-workflows/eng/appinspector
 
     - name: store appinspector
       if: ${{ always() }}
