@@ -389,13 +389,13 @@ jobs:
 
   check-nuget-environment:
     if: env.NUGET_AUTH_TOKEN != ''
-    env:
-        NUGET_AUTH_TOKEN: ${{ secrets.NUGET_API_KEY }}
     permissions:
       actions: read
       contents: read
       deployments: read
     runs-on: ubuntu-latest
+    env:
+        NUGET_AUTH_TOKEN: ${{ secrets.NUGET_API_KEY }}
     steps:
       - name: Check if 'nuget' environment exists and has protection rules
         uses: dpvreony/ensure-environment-protected@main
