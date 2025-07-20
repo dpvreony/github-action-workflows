@@ -391,16 +391,18 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       has_api_key: ${{ steps.check.outputs.has_api_key }}
+    env:
+      NUGET_API_KEY: ${{ secrets.nuget_api_key }}
     steps:
       - name: Check if NUGET_API_KEY is set
         id: check
         run: |
-          if [ -n "${{ secrets.nuget_api_key }}" ]; then
+          if [ -n "$NUGET_API_KEY" ]; then
             echo "has_api_key=true" >> "$GITHUB_OUTPUT"
           else
             echo "has_api_key=false" >> "$GITHUB_OUTPUT"
           fi
-          
+     
   check-nuget-environment:
     permissions:
       actions: read
