@@ -393,7 +393,7 @@ jobs:
       contents: read
       deployments: read
     runs-on: ubuntu-latest
-    if: secrets.NUGET_API_KEY != ''
+    if: ${{ secrets.nuget_api_key != '' }}
     steps:
       - name: Check if 'nuget' environment exists and has protection rules
         uses: dpvreony/ensure-environment-protected@main
