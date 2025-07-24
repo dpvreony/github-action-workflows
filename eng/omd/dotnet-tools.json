@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "isRoot": true,
+  "tools": {
+    "dotmorten.omdgenerator": {
+      "version": "1.5.1",
+      "commands": [
+        "generateomd"
+      ],
+      "rollForward": false
+    }
+  }
+}
