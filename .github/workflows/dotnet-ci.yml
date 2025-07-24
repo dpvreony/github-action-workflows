@@ -410,6 +410,22 @@ jobs:
         name: appinspector
         path: artifacts/appinspector
 
+  dependency-review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Checkout Repository'
+        uses: actions/checkout@v4
+      - name: 'Dependency Review'
+        uses: actions/dependency-review-action@v4
+        with:
+          comment-summary-in-pr: always
+
+  validate-renovate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dpvreony/github-action-renovate-config-validator@63c5f53df823879a6cd46a10d27fbe1d4ede7839
+
   check-nuget-api-key:
     runs-on: ubuntu-latest
     outputs:
