@@ -426,6 +426,48 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dpvreony/github-action-renovate-config-validator@63c5f53df823879a6cd46a10d27fbe1d4ede7839
 
+  omd-generation:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      with:
+        path: a
+
+    - name: Checkout dpvreony/github-action-workflow
+      uses: actions/checkout@8edcb1bdb4e267140fa742c62e395cd74f332709
+      with:
+        repository: dpvreony/github-action-workflows
+        path: github-action-workflows
+
+    - name: Install .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        global-json-file: "github-action-workflows/eng/omd/global.json"
+        
+    - name: Install dotnet tools
+      run: dotnet tool restore --tool-manifest dotnet-tools.json
+      working-directory:
+        github-action-workflows/eng/omd
+
+    - name: Prepare Artifact Directory
+      run: |
+        mkdir -p artifacts/omd
+
+    - name: Generate OMD HTML
+      run: |
+        dotnet generateomd /source=${{ github.workspace }}/a/src /output=${{ github.workspace }}/artifacts/omd/index.htm /format=html
+      working-directory: 
+         github-action-workflows/eng/omd
+
+    - name: store appinspector
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: appinspector
+        path: artifacts/omd
+
+
   check-nuget-api-key:
     runs-on: ubuntu-latest
     outputs:
