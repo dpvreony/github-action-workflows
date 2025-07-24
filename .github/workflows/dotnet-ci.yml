@@ -460,11 +460,11 @@ jobs:
       working-directory: 
          github-action-workflows/eng/omd
 
-    - name: store appinspector
+    - name: store omd
       if: ${{ always() }}
       uses: actions/upload-artifact@v4
       with:
-        name: appinspector
+        name: omd
         path: artifacts/omd
 
 
