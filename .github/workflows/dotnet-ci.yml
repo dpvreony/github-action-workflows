@@ -245,7 +245,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: unittestresults
-        path: artifacts/unittestresults
+        path: ${{ inputs.solutionName }}.UnitTests/bin/Release/net9.0/TestResults
 
     - name: store unit test coverage
       if: ${{ always() }}
