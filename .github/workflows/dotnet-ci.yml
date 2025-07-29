@@ -162,7 +162,7 @@ jobs:
     - name: Run Unit Tests
       working-directory: src
       run: |
-        dotnet test ${{ env.unittestprojectpath }} --verbosity normal --configuration Release --no-build /bl:${{ github.workspace }}\\artifacts/binlog/unittest.binlog --nologo --logger GitHubActions --blame-hang-timeout 60000 --results-directory ${{ github.workspace }}/artifacts/unittestcoverage -- /p:DeterministicSourcePaths=false -- --coverage --coverage-output-format cobertura --coverage-output coverage.xml
+        dotnet test ${{ env.unittestprojectpath }} --verbosity normal --results-directory ${{ github.workspace }}/artifacts/unittestresults --configuration Release --no-build /bl:${{ github.workspace }}\\artifacts/binlog/unittest.binlog --nologo --logger GitHubActions --blame-hang-timeout 60000 --results-directory ${{ github.workspace }}/artifacts/unittestcoverage -- /p:DeterministicSourcePaths=false -- --coverage --coverage-output-format cobertura --coverage-output coverage.xml
 
     - name: Run Sonar Scanner end
       if: env.SONAR_TOKEN != '' && env.SONAR_PROJECT_KEY != '' && env.SONAR_ORGANISATION_KEY != ''
@@ -239,6 +239,13 @@ jobs:
       with:
         name: binlogs
         path: artifacts/binlog
+
+    - name: store unit test results
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: unittestresults
+        path: artifacts/unittestresults
 
     - name: store unit test coverage
       if: ${{ always() }}
