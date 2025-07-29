@@ -193,7 +193,7 @@ jobs:
     # integration tests run after sonarscanner and unit test reporting so if the integration tests fail the report still uploads so we can see defects detected by sonarscanner and any unit test coverage issues.
     - name: Run Integration Tests
       run: |
-        dotnet test ${{ env.inttestprojectpath }} --configuration Release --no-build /bl:artifacts/binlog/inttest.binlog --nologo --logger GitHubActions --blame-hang-timeout 60000 --results-directory ${{ github.workspace }}/artifacts/inttestcoverage -- /p:DeterministicSourcePaths=false -- --coverage --coverage-output-format cobertura --coverage-output coverage.xml
+        dotnet test ${{ env.inttestprojectpath }} --configuration Release --no-build /bl:artifacts/binlog/inttest.binlog --nologo --blame-hang-timeout 60000 --results-directory ${{ github.workspace }}/artifacts/inttestcoverage -- /p:DeterministicSourcePaths=false -- --coverage --coverage-output-format cobertura --coverage-output coverage.xml
       working-directory: src
 
     - name: Report Integration Test Coverage
