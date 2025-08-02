@@ -105,6 +105,7 @@ jobs:
       run: |
         mkdir artifacts
         mkdir artifacts\nupkg
+        mkdir artifacts\outdated
         mkdir artifacts\sbom
 
     - name: Restore Packages
