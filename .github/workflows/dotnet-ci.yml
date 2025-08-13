@@ -289,7 +289,7 @@ jobs:
         path: a
 
     - name: Checkout dpvreony/github-action-workflow
-      uses: actions/checkout@8edcb1bdb4e267140fa742c62e395cd74f332709
+      uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493
       with:
         repository: dpvreony/github-action-workflows
         path: github-action-workflows
@@ -341,7 +341,7 @@ jobs:
         path: a
 
     - name: Checkout dpvreony/github-action-workflow
-      uses: actions/checkout@8edcb1bdb4e267140fa742c62e395cd74f332709
+      uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493
       with:
         repository: dpvreony/github-action-workflows
         path: github-action-workflows
@@ -382,7 +382,7 @@ jobs:
         path: a
 
     - name: Checkout dpvreony/github-action-workflow
-      uses: actions/checkout@8edcb1bdb4e267140fa742c62e395cd74f332709
+      uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493
       with:
         repository: dpvreony/github-action-workflows
         path: github-action-workflows
@@ -439,7 +439,7 @@ jobs:
         path: a
 
     - name: Checkout dpvreony/github-action-workflow
-      uses: actions/checkout@8edcb1bdb4e267140fa742c62e395cd74f332709
+      uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493
       with:
         repository: dpvreony/github-action-workflows
         path: github-action-workflows
