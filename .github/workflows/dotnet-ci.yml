@@ -70,7 +70,7 @@ jobs:
         . $sdkmanagerpath --install "platforms;android-30"
 
     - name: Install .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
         global-json-file: "./global.json"
 
@@ -295,7 +295,7 @@ jobs:
         path: github-action-workflows
 
     - name: Install .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
         global-json-file: "github-action-workflows/eng/licenses/global.json"
 
@@ -347,7 +347,7 @@ jobs:
         path: github-action-workflows
 
     - name: Install .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
         global-json-file: "github-action-workflows/eng/snitch/global.json"
 
@@ -388,7 +388,7 @@ jobs:
         path: github-action-workflows
 
     - name: Install .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
         global-json-file: "github-action-workflows/eng/appinspector/global.json"
         
@@ -445,7 +445,7 @@ jobs:
         path: github-action-workflows
 
     - name: Install .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
         global-json-file: "github-action-workflows/eng/omd/global.json"
         
