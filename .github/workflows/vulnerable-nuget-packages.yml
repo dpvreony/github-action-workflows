@@ -1,0 +1,56 @@
+name: Vulnerable NuGet Packages
+
+on:
+  workflow_call:
+    inputs:
+      solutionName:
+        required: true
+        type: string
+
+jobs:
+  vulnerable-nuget-packages:
+    runs-on: ubuntu-latest
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: 1
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+      DOTNET_NOLOGO: true
+      DOTNET_GENERATE_ASPNET_CERTIFICATE: false
+      solutionpath: ${{ inputs.solutionName }}.sln
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+      with:
+        path: a
+
+    - name: Checkout dpvreony/github-action-workflow
+      uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493
+      with:
+        repository: dpvreony/github-action-workflows
+        path: github-action-workflows
+
+    - name: Install .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        global-json-file: "github-action-workflows/eng/ci/global.json"
+
+    - name: Prepare Artifact Directory
+      run: |
+        mkdir -p artifacts/nuget-vulnerable
+
+    - name: Restore Packages
+      run: |
+        dotnet restore ${{ env.solutionpath }} -- /bl:artifacts\binlog\restore.binlog
+      working-directory: a/src
+
+    - name: List vulnerable packages
+      run: |
+        dotnet list package --project ${{ github.workspace }}/a/src/${{ env.solutionpath }} --vulnerable -format json >> ${{ github.workspace }}/artifacts/nuget-vulnerable/output.json
+      working-directory:
+        github-action-workflows/eng/ci
+
+    - name: store vulnerable package output
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: nuget-vulnerable
+        path: artifacts/nuget-vulnerable
