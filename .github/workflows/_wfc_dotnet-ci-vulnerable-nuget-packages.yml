@@ -45,7 +45,7 @@ jobs:
 
     - name: List vulnerable packages
       run: |
-        dotnet list package --project ${{ github.workspace }}/a/src/${{ env.solutionpath }} --vulnerable -format json >> ${{ github.workspace }}/artifacts/nuget-vulnerable/output.json
+        dotnet list package "${{ github.workspace }}/a/src/${{ env.solutionpath }}" --vulnerable -format json --include-transitive >> ${{ github.workspace }}/artifacts/nuget-vulnerable/output.json
       working-directory:
         a
 
