@@ -29,144 +29,19 @@ jobs:
       solutionName: ${{ inputs.solutionName }}
 
   licenses:
-    runs-on: ubuntu-latest
-    env:
-      DOTNET_CLI_TELEMETRY_OPTOUT: 1
-      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
-      DOTNET_NOLOGO: true
-      DOTNET_GENERATE_ASPNET_CERTIFICATE: false
-      solutionpath: ${{ inputs.solutionName }}.sln
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
-      with:
-        path: a
-
-    - name: Checkout dpvreony/github-action-workflow
-      uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493
-      with:
-        repository: dpvreony/github-action-workflows
-        path: github-action-workflows
-
-    - name: Install .NET
-      uses: actions/setup-dotnet@v5
-      with:
-        global-json-file: "github-action-workflows/eng/licenses/global.json"
-
-    - name: Install dotnet tools
-      run: dotnet tool restore --tool-manifest dotnet-tools.json
-      working-directory:
-        github-action-workflows/eng/licenses
-
-    - name: Prepare Artifact Directory
-      run: |
-        mkdir -p artifacts/licenses
-
-    - name: Restore Packages
-      run: |
-        dotnet restore ${{ env.solutionpath }} -- /bl:artifacts\\binlog\\restore.binlog
-      working-directory: a/src
-
-    - name: List licenses
-      run: |
-        dotnet nuget-license -i ${{ github.workspace }}/a/src/${{ env.solutionpath }} -t -o Json -fo ${{ github.workspace }}/artifacts/licenses/licenses.json
-      working-directory:
-        github-action-workflows/eng/licenses
-
-    - name: store licenses
-      if: ${{ always() }}
-      uses: actions/upload-artifact@v4
-      with:
-        name: licenses
-        path: artifacts/licenses
+    uses: ./.github/workflows/_wfc_dotnet-ci-licenses.yml
+    with:
+      solutionName: ${{ inputs.solutionName }}
 
   snitch:
-    runs-on: ubuntu-latest
-    env:
-      DOTNET_CLI_TELEMETRY_OPTOUT: 1
-      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
-      DOTNET_NOLOGO: true
-      DOTNET_GENERATE_ASPNET_CERTIFICATE: false
-      solutionpath: ${{ inputs.solutionName }}.sln
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
-      with:
-        path: a
-
-    - name: Checkout dpvreony/github-action-workflow
-      uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493
-      with:
-        repository: dpvreony/github-action-workflows
-        path: github-action-workflows
-
-    - name: Install .NET
-      uses: actions/setup-dotnet@v5
-      with:
-        global-json-file: "github-action-workflows/eng/snitch/global.json"
-
-    - name: Install dotnet tools
-      run: dotnet tool restore --tool-manifest dotnet-tools.json
-      working-directory:
-        github-action-workflows/eng/snitch
-
-    - name: Prepare Artifact Directory
-      run: |
-        mkdir -p artifacts/snitch
-
-    - name: run snitch
-      run: |
-        dotnet snitch ${{ github.workspace }}/a/src/${{ env.solutionpath }} > ${{ github.workspace }}/artifacts/snitch/snitch.txt
-      working-directory:
-        github-action-workflows/eng/snitch
-
-    - name: store snitch
-      if: ${{ always() }}
-      uses: actions/upload-artifact@v4
-      with:
-        name: snitch
-        path: artifacts/snitch
+    uses: ./.github/workflows/_wfc_dotnet-ci-snitch.yml
+    with:
+      solutionName: ${{ inputs.solutionName }}
 
   appinspector:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
-      with:
-        path: a
-
-    - name: Checkout dpvreony/github-action-workflow
-      uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493
-      with:
-        repository: dpvreony/github-action-workflows
-        path: github-action-workflows
-
-    - name: Install .NET
-      uses: actions/setup-dotnet@v5
-      with:
-        global-json-file: "github-action-workflows/eng/appinspector/global.json"
-        
-    - name: Install dotnet tools
-      run: dotnet tool restore --tool-manifest dotnet-tools.json
-      working-directory:
-        github-action-workflows/eng/appinspector
-
-    - name: Prepare Artifact Directory
-      run: |
-        mkdir -p artifacts/appinspector
-
-    - name: Generate App Inspector Report
-      run: |
-        dotnet appinspector analyze --no-show-progress -s ${{ github.workspace }}/a/src -f html -o ${{ github.workspace }}/artifacts/appinspector/appinspector.html
-      working-directory: 
-         github-action-workflows/eng/appinspector
-
-    - name: store appinspector
-      if: ${{ always() }}
-      uses: actions/upload-artifact@v4
-      with:
-        name: appinspector
-        path: artifacts/appinspector
+    uses: ./.github/workflows/_wfc_dotnet-ci-appinspector.yml
+    with:
+      solutionName: ${{ inputs.solutionName }}
 
   dependency-review:
     runs-on: ubuntu-latest
@@ -186,45 +61,9 @@ jobs:
       - uses: dpvreony/github-action-renovate-config-validator@63c5f53df823879a6cd46a10d27fbe1d4ede7839
 
   omd-generation:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
-      with:
-        path: a
-
-    - name: Checkout dpvreony/github-action-workflow
-      uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493
-      with:
-        repository: dpvreony/github-action-workflows
-        path: github-action-workflows
-
-    - name: Install .NET
-      uses: actions/setup-dotnet@v5
-      with:
-        global-json-file: "github-action-workflows/eng/omd/global.json"
-        
-    - name: Install dotnet tools
-      run: dotnet tool restore --tool-manifest dotnet-tools.json
-      working-directory:
-        github-action-workflows/eng/omd
-
-    - name: Prepare Artifact Directory
-      run: |
-        mkdir -p artifacts/omd
-
-    - name: Generate OMD HTML
-      run: |
-        dotnet generateomd /source=${{ github.workspace }}/a/src /output=${{ github.workspace }}/artifacts/omd/index.htm /format=html
-      working-directory: 
-         github-action-workflows/eng/omd
-
-    - name: store omd
-      if: ${{ always() }}
-      uses: actions/upload-artifact@v4
-      with:
-        name: omd
-        path: artifacts/omd
+    uses: ./.github/workflows/_wfc_dotnet-ci-omd-generation.yml
+    with:
+      solutionName: ${{ inputs.solutionName }}
 
   vulnerable-nuget-packages:
     uses: ./.github/workflows/_wfc_dotnet-ci-vulnerable-nuget-packages.yml
