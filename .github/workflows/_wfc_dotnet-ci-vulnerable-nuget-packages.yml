@@ -9,7 +9,7 @@ on:
         type: string
 
 jobs:
-  run:
+  nuget-vuln-package-run:
     runs-on: ubuntu-latest
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: 1
