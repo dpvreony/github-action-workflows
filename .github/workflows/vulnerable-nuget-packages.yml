@@ -1,4 +1,5 @@
-name: Vulnerable NuGet Packages
+# name is made short because the check path becomes really long and repeditive
+name: run
 
 on:
   workflow_call:
