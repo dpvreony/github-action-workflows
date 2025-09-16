@@ -32,7 +32,7 @@ jobs:
     - name: Install .NET
       uses: actions/setup-dotnet@v5
       with:
-        global-json-file: "github-action-workflows/eng/ci/global.json"
+        global-json-file: "a/global.json"
 
     - name: Prepare Artifact Directory
       run: |
@@ -47,7 +47,7 @@ jobs:
       run: |
         dotnet list package --project ${{ github.workspace }}/a/src/${{ env.solutionpath }} --vulnerable -format json >> ${{ github.workspace }}/artifacts/nuget-vulnerable/output.json
       working-directory:
-        github-action-workflows/eng/ci
+        a
 
     - name: store vulnerable package output
       if: ${{ always() }}
