@@ -176,6 +176,12 @@ jobs:
         SONAR_ORGANISATION_KEY: ${{ secrets.SONAR_ORGANISATION_KEY }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: Run BinLogStats for Build
+      if: ${{ always() && !cancelled() && (steps.build.outcome == 'success' || steps.build.outcome == 'failure') }}
+      run: |
+        dotnet gripe-msbuildlogstats -bl ../artifacts/binlog/build.binlog
+      working-directory: src
+
     - name: Upload Code Coverage
       run: |
         Invoke-WebRequest -Uri https://uploader.codecov.io/latest/windows/codecov.exe -Outfile codecov.exe
