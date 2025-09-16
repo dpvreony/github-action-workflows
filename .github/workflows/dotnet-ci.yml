@@ -177,7 +177,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Run BinLogStats for Build
-      if: ${{ always() && !cancelled() && (steps.build.outcome == 'success' || steps.build.outcome == 'failure') }}
+      if: ${{ always() && !cancelled() && (steps.run-build.outcome == 'success' || steps.run-build.outcome == 'failure') }}
       run: |
         dotnet gripe-msbuildlogstats -bl ../artifacts/binlog/build.binlog
       working-directory: src
