@@ -474,6 +474,11 @@ jobs:
     with:
       solutionName: ${{ inputs.solutionName }}
 
+  deprecated-nuget-packages:
+    uses: ./.github/workflows/_wfc_dotnet-ci-deprecated-nuget-packages.yml
+    with:
+      solutionName: ${{ inputs.solutionName }}
+
   check-nuget-api-key:
     runs-on: ubuntu-latest
     outputs:
