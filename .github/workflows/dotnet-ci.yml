@@ -113,16 +113,6 @@ jobs:
         dotnet restore ${{ env.solutionpath }} -- /bl:${{ github.workspace }}\\artifacts\\binlog\\restore.binlog
       working-directory: src
 
-    #- name: List Deprecated Packages
-    #  run: |
-    #    dotnet list package --deprecated
-    #  working-directory: src
-
-    #- name: List Vulnerable Packages
-    #  run: |
-    #    dotnet list package --vulnerable
-    #  working-directory: src
-
     - name: Changelog
       uses: glennawatson/ChangeLog@v1
       id: changelog
@@ -479,6 +469,10 @@ jobs:
         name: omd
         path: artifacts/omd
 
+  vulnerable-nuget-packages:
+    uses: ./.github/workflows/_wfc_dotnet-ci-vulnerable-nuget-packages.yml
+    with:
+      solutionName: ${{ inputs.solutionName }}
 
   check-nuget-api-key:
     runs-on: ubuntu-latest
