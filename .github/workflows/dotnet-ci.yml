@@ -463,7 +463,7 @@ jobs:
         path: artifacts/omd
 
   vulnerable-nuget-packages:
-    uses: ./.github/workflows/wfc/vulnerable-nuget-packages.yml
+    uses: ./.github/workflows/_wfc_dotnet-ci-vulnerable-nuget-packages.yml
     with:
       solutionName: ${{ inputs.solutionName }}
 
