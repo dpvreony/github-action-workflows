@@ -1,4 +1,6 @@
-﻿namespace Workflow.IntegrationTests
+﻿using Xunit;
+
+namespace Workflow.IntegrationTests
 {
     public static class SomeRecordTests
     {
