@@ -65,6 +65,12 @@
         "gripe-msbuildlogstats"
       ],
       "rollForward": false
+    },
+    "microsoft.sbom.dotnettool": {
+      "version": "4.1.2",
+      "commands": [
+        "sbom-tool"
+      ]
     }
   }
 }
