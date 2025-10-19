@@ -10,7 +10,7 @@ on:
         required: false
         type: string
         default: 'linux'
-        description: 'Primary OS for build and pack. Options: linux, windows. Default: linux'
+        description: 'Primary OS for build and pack. Valid values: "linux" or "windows". Default: "linux"'
       requiresMacOS:
         required: false
         type: boolean
@@ -36,12 +36,22 @@ on:
         value: ${{ jobs.build-linux.outputs.change_commit_log || jobs.build-windows.outputs.change_commit_log }}
 
 jobs:
+  validate-inputs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate buildOs input
+        run: |
+          if [[ "${{ inputs.buildOs }}" != "linux" && "${{ inputs.buildOs }}" != "windows" ]]; then
+            echo "::error::Invalid buildOs value '${{ inputs.buildOs }}'. Valid values are 'linux' or 'windows'."
+            exit 1
+          fi
+
   build-linux:
-    if: inputs.buildOs == 'linux'
+    needs: validate-inputs
     uses: ./.github/workflows/_wfc_dotnet-ci-build-linux.yml
     with:
       solutionName: ${{ inputs.solutionName }}
-      isPrimaryBuildOs: true
+      isPrimaryBuildOs: ${{ inputs.buildOs == 'linux' }}
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
@@ -50,6 +60,7 @@ jobs:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   build-windows:
+    needs: validate-inputs
     if: inputs.buildOs == 'windows'
     uses: ./.github/workflows/_wfc_dotnet-ci-build-windows.yml
     with:
@@ -63,6 +74,7 @@ jobs:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   build-macos:
+    needs: validate-inputs
     if: inputs.requiresMacOS
     uses: ./.github/workflows/_wfc_dotnet-ci-build-macos.yml
     with:
