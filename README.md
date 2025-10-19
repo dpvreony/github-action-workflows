@@ -70,6 +70,7 @@ jobs:
 - **Modular Design:** Uses sub-workflows for modularity and reusability.
 - **Security:** Checks for environment protection before NuGet release.
 - **Smart Release Detection:** Automatically determines if a release is needed by comparing changes since the last release, excluding test files.
+- **Old Build Protection:** Prevents outdated builds from triggering releases when a newer release already exists.
 - **Release Automation:** Creates GitHub releases and pushes NuGet packages.
 - **Dependency Checks:** Reviews dependencies and validates Renovate configs.
 - **Comprehensive Analysis:** Includes code inspection, license checking, object-modeling technique (OMT) diagram generation, vulnerable and deprecated NuGet package checks.
@@ -85,6 +86,18 @@ The `check-release-required` job intelligently determines if a new release is ne
 5. Setting a flag to indicate whether a release is required
 
 This ensures that releases are only created when there are meaningful changes to the source code, not just test updates.
+
+### Old Build Protection
+
+The `check-release-required` job includes logic to prevent outdated builds from triggering releases:
+
+When checking if a release is required, the workflow verifies that the current commit is not older than the latest release. This prevents the scenario where:
+- Build A starts for commit X
+- Build B starts for commit Y (newer than X)  
+- Build B completes and creates a release
+- Build A (now outdated) is prevented from triggering a release
+
+The check uses git ancestry to determine if the current commit is an ancestor of the latest release's commit. If so, the build is considered outdated and `release_required` is set to `false`, preventing any release from being created.
 
 ---
 
