@@ -133,6 +133,21 @@ jobs:
           else
             echo "Latest release: $latest_release"
             
+            # Check if this build is older than the latest release
+            # Get commit SHA for the latest release
+            latest_sha=$(git rev-list -n 1 "$latest_release" 2>/dev/null || echo "")
+            current_sha="${{ github.sha }}"
+            
+            if [ -n "$latest_sha" ]; then
+              # Check if current commit is an ancestor of latest release
+              # If current is an ancestor of latest, then latest is newer and we should not release
+              if git merge-base --is-ancestor "$current_sha" "$latest_sha" 2>/dev/null; then
+                echo "::warning::Current commit is older than the latest release ($latest_release). This build will not trigger a release."
+                echo "release_required=false" >> "$GITHUB_OUTPUT"
+                exit 0
+              fi
+            fi
+            
             # Get diff between current commit and latest release tag
             # Check if there are changes in src/ excluding *.*Tests folders
             changed_files=$(git diff --name-only "$latest_release" HEAD -- src/ | grep -v '.*\..*Tests/' || true)
@@ -163,41 +178,6 @@ jobs:
       DOTNET_NOLOGO: true
       DOTNET_GENERATE_ASPNET_CERTIFICATE: false
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v5
-      with:
-        fetch-depth: 0
-    - name: Check if newer release exists
-      env:
-        GH_TOKEN: ${{ github.token }}
-      run: |
-        # Get the version we're trying to release
-        target_version="${{ needs.build.outputs.nbgv }}"
-        echo "Target version: $target_version"
-        
-        # Get the latest release
-        latest_release=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' 2>/dev/null || echo "")
-        
-        if [ -n "$latest_release" ]; then
-          echo "Latest release: $latest_release"
-          
-          # Check if the latest release is newer than our target version
-          # This prevents old builds from creating releases
-          if [ "$latest_release" != "$target_version" ]; then
-            # Get commit SHAs for both tags
-            latest_sha=$(git rev-list -n 1 "$latest_release" 2>/dev/null || echo "")
-            current_sha="${{ github.sha }}"
-            
-            # Check if latest_release is an ancestor of current commit
-            # If current is an ancestor of latest, then latest is newer
-            if [ -n "$latest_sha" ] && git merge-base --is-ancestor "$current_sha" "$latest_sha" 2>/dev/null; then
-              echo "::error::A newer release ($latest_release) already exists. This build is outdated and will not be released."
-              exit 1
-            fi
-          fi
-        fi
-        
-        echo "No newer release found, proceeding with release"
     - name: Download NuGet Packages
       uses: actions/download-artifact@v5
       with:
