@@ -34,7 +34,7 @@ Follow the conventions defined in `.editorconfig`:
 - **Naming conventions**:
   - Private/internal fields: `_camelCase` (with underscore prefix)
   - Constants: `PascalCase`
-  - Static fields: `camelCase`
+  - Static fields: `s_camelCase` (with s_ prefix)
 - **Variable declarations**:
   - Avoid `var` for built-in types
   - Only use `var` when type is apparent
@@ -60,9 +60,10 @@ Follow the conventions defined in `.editorconfig`:
 
 - `solutionName`: Required string, the .NET solution name WITHOUT extension
   - Used to derive project paths:
-    - Unit tests: `{solutionName}.UnitTests`
-    - Integration tests: `{solutionName}.IntegrationTests`
-    - Benchmarks: `{solutionName}.Benchmarks`
+    - Solution: `{solutionName}.sln`
+    - Unit tests: `{solutionName}.UnitTests/{solutionName}.UnitTests.csproj`
+    - Integration tests: `{solutionName}.IntegrationTests/{solutionName}.IntegrationTests.csproj`
+    - Benchmarks: `{solutionName}.Benchmarks/{solutionName}.Benchmarks.csproj`
 
 ### Common Secrets
 
