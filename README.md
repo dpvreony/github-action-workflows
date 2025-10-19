@@ -70,6 +70,8 @@ jobs:
 - **Modular Design:** Uses sub-workflows for modularity and reusability.
 - **Security:** Checks for environment protection before NuGet release.
 - **Smart Release Detection:** Automatically determines if a release is needed by comparing changes since the last release, excluding test files.
+- **Concurrency Controls:** Cancels old workflow runs on the main branch to prevent outdated builds from triggering releases.
+- **Release Guard:** Prevents old builds from creating releases when a newer release already exists.
 - **Release Automation:** Creates GitHub releases and pushes NuGet packages.
 - **Dependency Checks:** Reviews dependencies and validates Renovate configs.
 - **Comprehensive Analysis:** Includes code inspection, license checking, object-modeling technique (OMT) diagram generation, vulnerable and deprecated NuGet package checks.
@@ -85,6 +87,20 @@ The `check-release-required` job intelligently determines if a new release is ne
 5. Setting a flag to indicate whether a release is required
 
 This ensures that releases are only created when there are meaningful changes to the source code, not just test updates.
+
+### Concurrency and Release Protection
+
+The workflow includes protection mechanisms to prevent old builds from creating releases:
+
+1. **Workflow Concurrency:** When a new workflow run is triggered on the main branch, any in-progress runs on the same branch are automatically cancelled. This ensures only the latest build proceeds.
+
+2. **Release Guard:** Before creating a release, the workflow checks if a newer release already exists. This prevents the scenario where:
+   - Build A starts for commit X
+   - Build B starts for commit Y (newer than X)
+   - Build B completes and creates a release
+   - Build A (now outdated) is prevented from creating a duplicate or outdated release
+
+This double protection ensures that manually retriggered old builds cannot interfere with the release process.
 
 ---
 
