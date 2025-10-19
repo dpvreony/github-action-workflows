@@ -57,8 +57,8 @@ runs:
         } elseif ($IsMacOS) {
           dotnet workload install android aspire ios tvos macos maui
         } else {
-          # Linux - skip iOS, tvOS, and macOS workloads
-          dotnet workload install android aspire maui
+          # Linux - skip iOS, tvOS, macOS, and maui workloads (not supported)
+          dotnet workload install android aspire
         }
         dotnet workload list
       working-directory: src
