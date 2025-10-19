@@ -26,6 +26,7 @@ The workflow consists of several jobs, many of which delegate their logic to ded
 | `validate-renovate`       | Validates Renovate configuration                     | Inline (uses `dpvreony/github-action-renovate-config-validator`) |
 | `check-nuget-api-key`     | Checks if NuGet API key is set                       | Inline                                                |
 | `check-nuget-environment` | Validates NuGet environment protection               | Inline (uses `dpvreony/ensure-environment-protected`)  |
+| `check-release-required`  | Determines if a release is needed based on code changes | Inline (compares changes since last release)       |
 | `release`                 | Creates a GitHub release and pushes NuGet packages   | Inline (uses `actions/create-release` & `dotnet nuget push`) |
 
 ### Sub-workflow Files
@@ -68,9 +69,22 @@ jobs:
 
 - **Modular Design:** Uses sub-workflows for modularity and reusability.
 - **Security:** Checks for environment protection before NuGet release.
+- **Smart Release Detection:** Automatically determines if a release is needed by comparing changes since the last release, excluding test files.
 - **Release Automation:** Creates GitHub releases and pushes NuGet packages.
 - **Dependency Checks:** Reviews dependencies and validates Renovate configs.
 - **Comprehensive Analysis:** Includes code inspection, license checking, object-modeling technique (OMT) diagram generation, vulnerable and deprecated NuGet package checks.
+
+### Release Detection Logic
+
+The `check-release-required` job intelligently determines if a new release is necessary by:
+
+1. Fetching the latest GitHub release tag
+2. If no release exists, defaulting to requiring a release
+3. If a release exists, comparing changes between the release tag and the current commit
+4. Checking for changes in the `/src/` directory while excluding test folders (matching pattern `*.*Tests`)
+5. Setting a flag to indicate whether a release is required
+
+This ensures that releases are only created when there are meaningful changes to the source code, not just test updates.
 
 ---
 
