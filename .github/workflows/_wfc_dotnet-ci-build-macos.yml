@@ -27,10 +27,6 @@ jobs:
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:
           fetch-depth: 0
-      - name: Verify the ref context
-        run: echo 'Ref Context is ${{ github.ref }}'
-      - name: Verify the head ref context
-        run: echo 'Head Ref Context is ${{ github.head_ref }}'
       - name: Install .NET
         uses: actions/setup-dotnet@v5
         with:
