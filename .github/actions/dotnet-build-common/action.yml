@@ -50,9 +50,16 @@ runs:
         global-json-file: "./global.json"
     
     - name: Install DotNet workloads
-      shell: bash
+      shell: pwsh
       run: |
-        dotnet workload install android aspire ios tvos macos maui
+        if ($IsWindows) {
+          dotnet workload install android aspire ios tvos macos maui
+        } elseif ($IsMacOS) {
+          dotnet workload install android aspire ios tvos macos maui
+        } else {
+          # Linux - skip iOS, tvOS, and macOS workloads
+          dotnet workload install android aspire maui
+        }
         dotnet workload list
       working-directory: src
     
@@ -137,7 +144,7 @@ runs:
         dotnet sonarscanner end /d:sonar.login="${{ inputs.sonarToken }}"
     
     - name: Run BinLogStats for Build
-      if: always() && !cancelled()
+      if: always() && !cancelled() && (steps.run-build.outcome == 'success' || steps.run-build.outcome == 'failure')
       shell: pwsh
       working-directory: src
       run: |

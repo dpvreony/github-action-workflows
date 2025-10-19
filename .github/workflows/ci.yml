@@ -22,4 +22,5 @@ jobs:
     uses: ./.github/workflows/dotnet-ci.yml
     with:
       solutionName: "Workflow"
+      buildOs: "windows"
 
