@@ -1,17 +1,11 @@
 name: 'Common .NET Build Steps'
-description: 'Shared build, test, and pack steps for .NET projects'
+description: 'Shared setup, build, test, and pack steps for .NET projects'
 inputs:
   solutionName:
     description: 'Name of the solution file WITHOUT the extension'
     required: true
   isPrimaryBuildOs:
     description: 'If true, this OS will upload release artifacts'
-    required: true
-  changeCommitLog:
-    description: 'Changelog commit log from previous step'
-    required: true
-  nbgvVersion:
-    description: 'NBGV version string'
     required: true
   sonarToken:
     description: 'Sonar token for scanning'
@@ -28,9 +22,56 @@ inputs:
   virusTotalApiKey:
     description: 'VirusTotal API key'
     required: false
+outputs:
+  nbgvVersion:
+    description: 'NBGV SemVer2 version'
+    value: ${{ steps.nbgv.outputs.SemVer2 }}
+  changeCommitLog:
+    description: 'Changelog commit log'
+    value: ${{ steps.changelog.outputs.commitLog }}
 runs:
   using: 'composite'
   steps:
+    - name: Setup Java 17
+      uses: actions/setup-java@v5
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+    
+    - name: Install .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        global-json-file: "./global.json"
+    
+    - name: Install DotNet workloads
+      shell: bash
+      run: |
+        dotnet workload install android aspire ios tvos macos maui
+        dotnet workload list
+      working-directory: src
+    
+    - name: Cleanup nuget local storage
+      shell: pwsh
+      run: |
+        dotnet nuget locals all --clear
+        dotnet nuget remove source "Microsoft Visual Studio Offline Packages" 2>&1 | Out-Null
+      working-directory: src
+    
+    - name: NBGV
+      id: nbgv
+      uses: dotnet/nbgv@master
+      with:
+        setAllVars: true
+    
+    - name: Install dotnet tools
+      shell: pwsh
+      run: dotnet tool restore
+      working-directory: src
+    
+    - name: Changelog
+      uses: glennawatson/ChangeLog@v1
+      id: changelog
+    
     - name: Prepare Artifact Directory
       shell: pwsh
       run: |
@@ -49,7 +90,7 @@ runs:
       shell: pwsh
       run: |
         $changecommitlog = @'
-        ${{ inputs.changeCommitLog }}
+        ${{ steps.changelog.outputs.commitLog }}
         '@
         $changecommitlog = $changecommitlog.Replace('"', '''')
         $lines = $changecommitlog -split "`n"
@@ -71,7 +112,7 @@ runs:
       working-directory: src
       run: |
         $env:CHANGE_COMMIT_LOG = @'
-        ${{ inputs.changeCommitLog }}
+        ${{ steps.changelog.outputs.commitLog }}
         '@
         dotnet build ${{ inputs.solutionName }}.sln --configuration Release --no-restore /bl:${{ github.workspace }}/artifacts/binlog/build.binlog /p:ContinuousIntegrationBuild=true
     
@@ -132,7 +173,7 @@ runs:
       working-directory: src
       run: |
         $env:CHANGE_COMMIT_LOG = @'
-        ${{ inputs.changeCommitLog }}
+        ${{ steps.changelog.outputs.commitLog }}
         '@
         dotnet pack ${{ inputs.solutionName }}.sln --configuration Release --no-build /bl:${{ github.workspace }}/artifacts/binlog/pack.binlog --nologo /p:PackageOutputPath=${{ github.workspace }}/artifacts/nuget /p:ContinuousIntegrationBuild=true
     
@@ -140,7 +181,7 @@ runs:
       if: inputs.isPrimaryBuildOs == 'true'
       shell: pwsh
       run: |
-        dotnet sbom-tool generate -b artifacts/nuget -bc src -pn ${{ inputs.solutionName }} -pv ${{ inputs.nbgvVersion }} -ps "DHGMS Solutions" -nsb https://sbom.dhgms.com -m artifacts/sbom
+        dotnet sbom-tool generate -b artifacts/nuget -bc src -pn ${{ inputs.solutionName }} -pv ${{ steps.nbgv.outputs.SimpleVersion }} -ps "DHGMS Solutions" -nsb https://sbom.dhgms.com -m artifacts/sbom
     
     - name: List outdated packages
       if: inputs.isPrimaryBuildOs == 'true'

@@ -34,8 +34,8 @@ jobs:
   build:
     runs-on: windows-2025
     outputs:
-      nbgv: ${{ steps.nbgv.outputs.SemVer2 }}
-      change_commit_log: ${{ steps.changelog.outputs.commitLog }}
+      nbgv: ${{ steps.common-build.outputs.nbgvVersion }}
+      change_commit_log: ${{ steps.common-build.outputs.changeCommitLog }}
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: 1
       DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
@@ -50,11 +50,6 @@ jobs:
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:
           fetch-depth: 0
-      - name: Setup Java 17
-        uses: actions/setup-java@v5
-        with:
-          distribution: 'temurin'
-          java-version: '17'
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3.2.2
       - name: Install Android SDK
@@ -65,40 +60,13 @@ jobs:
           }
           echo $sdkmanagerpath
           . $sdkmanagerpath --install "platforms;android-30"
-      - name: Install .NET
-        uses: actions/setup-dotnet@v5
-        with:
-          global-json-file: "./global.json"
-      - name: Install DotNet workloads
-        shell: bash
-        run: |
-          dotnet workload install android aspire ios tvos macos maui
-          dotnet workload list
-        working-directory: src
-      - name: Cleanup nuget local storage
-        run: |
-          dotnet nuget locals all --clear
-          dotnet nuget remove source "Microsoft Visual Studio Offline Packages"
-        working-directory: src
-      - name: NBGV
-        id: nbgv
-        uses: dotnet/nbgv@master
-        with:
-          setAllVars: true
-      - name: Install dotnet tools
-        run: dotnet tool restore
-        working-directory: src
-      - name: Changelog
-        uses: glennawatson/ChangeLog@v1
-        id: changelog
       
       - name: Run Common Build Steps
+        id: common-build
         uses: ./.github/actions/dotnet-build-common
         with:
           solutionName: ${{ inputs.solutionName }}
           isPrimaryBuildOs: ${{ inputs.isPrimaryBuildOs }}
-          changeCommitLog: ${{ steps.changelog.outputs.commitLog }}
-          nbgvVersion: ${{ steps.nbgv.outputs.SimpleVersion }}
           sonarToken: ${{ secrets.SONAR_TOKEN }}
           sonarProjectKey: ${{ secrets.SONAR_PROJECT_KEY }}
           sonarOrganisationKey: ${{ secrets.SONAR_ORGANISATION_KEY }}
