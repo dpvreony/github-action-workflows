@@ -1,0 +1,160 @@
+name: 'Common .NET Build Steps'
+description: 'Shared build, test, and pack steps for .NET projects'
+inputs:
+  solutionName:
+    description: 'Name of the solution file WITHOUT the extension'
+    required: true
+  isPrimaryBuildOs:
+    description: 'If true, this OS will upload release artifacts'
+    required: true
+  changeCommitLog:
+    description: 'Changelog commit log from previous step'
+    required: true
+  nbgvVersion:
+    description: 'NBGV version string'
+    required: true
+  sonarToken:
+    description: 'Sonar token for scanning'
+    required: false
+  sonarProjectKey:
+    description: 'Sonar project key'
+    required: false
+  sonarOrganisationKey:
+    description: 'Sonar organisation key'
+    required: false
+  githubToken:
+    description: 'GitHub token for Sonar'
+    required: false
+  virusTotalApiKey:
+    description: 'VirusTotal API key'
+    required: false
+runs:
+  using: 'composite'
+  steps:
+    - name: Prepare Artifact Directory
+      shell: pwsh
+      run: |
+        New-Item -ItemType Directory -Force -Path artifacts/nupkg | Out-Null
+        New-Item -ItemType Directory -Force -Path artifacts/outdated | Out-Null
+        New-Item -ItemType Directory -Force -Path artifacts/sbom | Out-Null
+        New-Item -ItemType Directory -Force -Path artifacts/binlog | Out-Null
+    
+    - name: Restore Packages
+      shell: pwsh
+      working-directory: src
+      run: |
+        dotnet restore ${{ inputs.solutionName }}.sln /bl:${{ github.workspace }}/artifacts/binlog/restore.binlog
+    
+    - name: Report Changelog Summary
+      shell: pwsh
+      run: |
+        $changecommitlog = @'
+        ${{ inputs.changeCommitLog }}
+        '@
+        $changecommitlog = $changecommitlog.Replace('"', '''')
+        $lines = $changecommitlog -split "`n"
+        foreach ($line in $lines) {
+          Write-Output "::notice::$line"
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value $line
+        }
+    
+    - name: Run Sonar Scanner begin
+      if: inputs.isPrimaryBuildOs == 'true' && inputs.sonarToken != '' && inputs.sonarProjectKey != '' && inputs.sonarOrganisationKey != ''
+      shell: pwsh
+      working-directory: src
+      run: |
+        dotnet sonarscanner begin /k:"${{ inputs.sonarProjectKey }}" /d:sonar.login="${{ inputs.sonarToken }}" /d:sonar.host.url="https://sonarcloud.io" /o:"${{ inputs.sonarOrganisationKey }}" /d:sonar.cs.opencover.reportsPaths="${{ github.workspace }}/artifacts/unittestcoverage/coverage.xml"
+    
+    - name: Run Build
+      id: run-build
+      shell: pwsh
+      working-directory: src
+      run: |
+        $env:CHANGE_COMMIT_LOG = @'
+        ${{ inputs.changeCommitLog }}
+        '@
+        dotnet build ${{ inputs.solutionName }}.sln --configuration Release --no-restore /bl:${{ github.workspace }}/artifacts/binlog/build.binlog /p:ContinuousIntegrationBuild=true
+    
+    - name: Run Unit Tests
+      shell: pwsh
+      working-directory: src
+      run: |
+        dotnet test ${{ inputs.solutionName }}.UnitTests/${{ inputs.solutionName }}.UnitTests.csproj --verbosity normal --configuration Release --no-build /bl:${{ github.workspace }}/artifacts/binlog/unittest.binlog --nologo --logger GitHubActions -- --coverage --coverage-output-format cobertura --coverage-output coverage.xml --long-running 10 --results-directory ${{ github.workspace }}/artifacts/unittestcoverage
+    
+    - name: Run Sonar Scanner end
+      if: inputs.isPrimaryBuildOs == 'true' && inputs.sonarToken != '' && inputs.sonarProjectKey != '' && inputs.sonarOrganisationKey != ''
+      shell: pwsh
+      working-directory: src
+      run: |
+        $env:GITHUB_TOKEN = "${{ inputs.githubToken }}"
+        dotnet sonarscanner end /d:sonar.login="${{ inputs.sonarToken }}"
+    
+    - name: Run BinLogStats for Build
+      if: always() && !cancelled()
+      shell: pwsh
+      working-directory: src
+      run: |
+        dotnet gripe-msbuildlogstats -bl ../artifacts/binlog/build.binlog
+    
+    - name: Report Unit Test Coverage
+      shell: pwsh
+      run: |
+        $opencoverxmlpath = Get-ChildItem 'artifacts/unittestcoverage/coverage.xml' -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($opencoverxmlpath) {
+          $xml = [xml](Get-Content $opencoverxmlpath)
+          $unitTestCoverage = $xml.CoverageSession.Summary.branchCoverage
+          $coverageMessage = "Unit Test Coverage: $unitTestCoverage"
+          Write-Output "::notice::$coverageMessage"
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value $coverageMessage
+        }
+    
+    - name: Run Integration Tests
+      shell: pwsh
+      working-directory: src
+      run: |
+        dotnet test ${{ inputs.solutionName }}.IntegrationTests/${{ inputs.solutionName }}.IntegrationTests.csproj --configuration Release --no-build --nologo /bl:../artifacts/binlog/inttest.binlog --logger "GitHubActions;verbosity=normal" -- --coverage --coverage-output-format cobertura --coverage-output coverage.xml --long-running 10 --results-directory ${{ github.workspace }}/artifacts/inttestcoverage
+    
+    - name: Report Integration Test Coverage
+      shell: pwsh
+      run: |
+        $opencoverxmlpath = Get-ChildItem 'artifacts/inttestcoverage/coverage.xml' -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($opencoverxmlpath) {
+          $xml = [xml](Get-Content $opencoverxmlpath)
+          $intTestCoverage = $xml.CoverageSession.Summary.branchCoverage
+          $coverageMessage = "Integration Test Coverage: $intTestCoverage"
+          Write-Output "::notice::$coverageMessage"
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value $coverageMessage
+        }
+    
+    - name: Produce Nuget Packages
+      if: inputs.isPrimaryBuildOs == 'true'
+      shell: pwsh
+      working-directory: src
+      run: |
+        $env:CHANGE_COMMIT_LOG = @'
+        ${{ inputs.changeCommitLog }}
+        '@
+        dotnet pack ${{ inputs.solutionName }}.sln --configuration Release --no-build /bl:${{ github.workspace }}/artifacts/binlog/pack.binlog --nologo /p:PackageOutputPath=${{ github.workspace }}/artifacts/nuget /p:ContinuousIntegrationBuild=true
+    
+    - name: Generate SBOM
+      if: inputs.isPrimaryBuildOs == 'true'
+      shell: pwsh
+      run: |
+        dotnet sbom-tool generate -b artifacts/nuget -bc src -pn ${{ inputs.solutionName }} -pv ${{ inputs.nbgvVersion }} -ps "DHGMS Solutions" -nsb https://sbom.dhgms.com -m artifacts/sbom
+    
+    - name: List outdated packages
+      if: inputs.isPrimaryBuildOs == 'true'
+      shell: pwsh
+      working-directory: src
+      run: |
+        dotnet outdated -o ${{ github.workspace }}/artifacts/outdated/outdated.json
+    
+    - name: VirusTotal Monitor Scan
+      if: inputs.isPrimaryBuildOs == 'true' && inputs.virusTotalApiKey != ''
+      uses: crazy-max/ghaction-virustotal@v4
+      with:
+        vt_api_key: ${{ inputs.virusTotalApiKey }}
+        vt_monitor: true
+        monitor_path: /ghaction-virustotal
+        files: |
+          ./artifacts/nuget/*.nupkg
