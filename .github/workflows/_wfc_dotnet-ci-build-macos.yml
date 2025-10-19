@@ -27,76 +27,11 @@ jobs:
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:
           fetch-depth: 0
-      - name: Install .NET
-        uses: actions/setup-dotnet@v5
+      
+      - name: Run Common Build Steps
+        uses: ./.github/actions/dotnet-build-common
         with:
-          global-json-file: "./global.json"
-      - name: Install DotNet workloads
-        shell: bash
-        run: |
-          dotnet workload install android aspire ios tvos macos maui
-          dotnet workload list
-        working-directory: src
-      - name: Cleanup nuget local storage
-        run: |
-          dotnet nuget locals all --clear
-        working-directory: src
-      - name: Install dotnet tools
-        run: dotnet tool restore
-        working-directory: src
-      - name: Prepare Artifact Directory
-        run: |
-          mkdir -p artifacts/binlog
-      - name: Restore Packages
-        run: |
-          dotnet restore ${{ env.solutionpath }} /bl:${{ github.workspace }}/artifacts/binlog/restore.binlog
-        working-directory: src
-      - name: Run Build
-        id: run-build
-        run: |
-          dotnet build ${{ env.solutionpath }} --configuration Release --no-restore /bl:${{ github.workspace }}/artifacts/binlog/build.binlog /p:ContinuousIntegrationBuild=true
-        working-directory: src
-      - name: Run Unit Tests
-        working-directory: src
-        run: |
-          dotnet test ${{ env.unittestprojectpath }} --verbosity normal --configuration Release --no-build /bl:${{ github.workspace }}/artifacts/binlog/unittest.binlog --nologo --logger GitHubActions -- --coverage --coverage-output-format cobertura --coverage-output coverage.xml --long-running 10 --results-directory ${{ github.workspace }}/artifacts/unittestcoverage
-      - name: Run BinLogStats for Build
-        if: ${{ always() && !cancelled() && (steps.run-build.outcome == 'success' || steps.run-build.outcome == 'failure') }}
-        run: |
-          dotnet gripe-msbuildlogstats -bl ../artifacts/binlog/build.binlog
-        working-directory: src
-      - name: Upload Code Coverage
-        run: |
-          curl -Os https://uploader.codecov.io/latest/macos/codecov
-          chmod +x codecov
-          ./codecov -s 'artifacts/unittestcoverage' -f '*.xml' -v -t '${{ env.CODECOV_TOKEN }}'
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-      - name: Report Unit Test Coverage
-        run: |
-          opencoverxmlpath=$(find artifacts/unittestcoverage/coverage.xml | head -n 1)
-          if [ -f "$opencoverxmlpath" ]; then
-            unitTestCoverage=$(grep -oP 'branchCoverage="\K[^"]*' "$opencoverxmlpath" | head -n 1 || grep -o 'branchCoverage="[^"]*"' "$opencoverxmlpath" | head -n 1 | cut -d'"' -f2)
-            coverageMessage="Unit Test Coverage: $unitTestCoverage"
-            echo "::notice::$coverageMessage"
-            echo "$coverageMessage" >> $GITHUB_STEP_SUMMARY
-          fi
-      - name: Run Integration Tests
-        run: |
-          dotnet test ${{ env.inttestprojectpath }} --configuration Release --no-build --nologo /bl:../artifacts/binlog/inttest.binlog --logger "GitHubActions;verbosity=normal" -- --coverage --coverage-output-format cobertura --coverage-output coverage.xml --long-running 10 --results-directory ${{ github.workspace }}/artifacts/inttestcoverage
-        working-directory: src
-      - name: Report Integration Test Coverage
-        run: |
-          opencoverxmlpath=$(find artifacts/inttestcoverage/coverage.xml | head -n 1)
-          if [ -f "$opencoverxmlpath" ]; then
-            intTestCoverage=$(grep -oP 'branchCoverage="\K[^"]*' "$opencoverxmlpath" | head -n 1 || grep -o 'branchCoverage="[^"]*"' "$opencoverxmlpath" | head -n 1 | cut -d'"' -f2)
-            coverageMessage="Integration Test Coverage: $intTestCoverage"
-            echo "::notice::$coverageMessage"
-            echo "$coverageMessage" >> $GITHUB_STEP_SUMMARY
-          fi
-      - name: store binlogs
-        if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: binlogs-macos
-          path: artifacts/binlog
+          solutionName: ${{ inputs.solutionName }}
+          isPrimaryBuildOs: false
+          osName: macos
+          codecovToken: ${{ secrets.CODECOV_TOKEN }}

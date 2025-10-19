@@ -7,6 +7,12 @@ inputs:
   isPrimaryBuildOs:
     description: 'If true, this OS will upload release artifacts'
     required: true
+  osName:
+    description: 'OS name for artifact naming (e.g., linux, windows, macos)'
+    required: true
+  codecovToken:
+    description: 'Codecov token for coverage upload'
+    required: false
   sonarToken:
     description: 'Sonar token for scanning'
     required: false
@@ -199,3 +205,71 @@ runs:
         monitor_path: /ghaction-virustotal
         files: |
           ./artifacts/nuget/*.nupkg
+    
+    - name: Upload Code Coverage
+      if: inputs.codecovToken != ''
+      shell: pwsh
+      run: |
+        if ($IsLinux) {
+          curl -Os https://uploader.codecov.io/latest/linux/codecov
+          chmod +x codecov
+          ./codecov -s 'artifacts/unittestcoverage' -f '*.xml' -v -t '${{ inputs.codecovToken }}'
+        } elseif ($IsMacOS) {
+          curl -Os https://uploader.codecov.io/latest/macos/codecov
+          chmod +x codecov
+          ./codecov -s 'artifacts/unittestcoverage' -f '*.xml' -v -t '${{ inputs.codecovToken }}'
+        } elseif ($IsWindows) {
+          Invoke-WebRequest -Uri https://uploader.codecov.io/latest/windows/codecov.exe -Outfile codecov.exe
+          .\codecov.exe -s 'artifacts/unittestcoverage' -f '*.xml' -v -t '${{ inputs.codecovToken }}'
+        }
+    
+    - name: store binlogs
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: binlogs-${{ inputs.osName }}
+        path: artifacts/binlog
+    
+    - name: store unit test coverage
+      if: inputs.isPrimaryBuildOs == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: unittestcoverage
+        path: artifacts/unittestcoverage
+        if-no-files-found: error
+    
+    - name: store integration test coverage
+      if: inputs.isPrimaryBuildOs == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: inttestcoverage
+        path: artifacts/inttestcoverage
+    
+    - name: store nuget packages
+      if: inputs.isPrimaryBuildOs == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: nuget
+        path: artifacts/nuget
+        if-no-files-found: error
+    
+    - name: store omd
+      if: inputs.isPrimaryBuildOs == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: omd
+        path: artifacts/omd
+    
+    - name: store sbom
+      if: inputs.isPrimaryBuildOs == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: sbom
+        path: artifacts/sbom
+    
+    - name: store outdated
+      if: inputs.isPrimaryBuildOs == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: outdated
+        path: artifacts/outdated
