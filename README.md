@@ -39,7 +39,8 @@ The workflow consists of several jobs, many of which delegate their logic to ded
 | `build-macos`             | Builds on macOS (optional, never releases)           | `_wfc_dotnet-ci-build-macos.yml`                      |
 | `build-windows`           | Builds on Windows (when selected as primary OS)      | `_wfc_dotnet-ci-build-windows.yml`                    |
 | `check-codeql-enabled`    | Checks if CodeQL should run based on repository visibility and Advanced Security settings | `_wfc_dotnet-ci-check-codeql-enabled.yml`             |
-| `check-nuget-user`        | Checks if NUGET_USER is set and validates OIDC token availability for Trusted Publishers | Inline                                                |
+| `check-nuget-user-populated` | Checks if NUGET_USER secret is set | Inline                                                |
+| `check-nuget-trusted-publisher-valid` | Validates NuGet Trusted Publisher login before approval by testing NuGet/login@v1 action | Inline (uses `NuGet/login@v1`)  |
 | `check-nuget-environment` | Validates NuGet environment protection               | Inline (uses `dpvreony/ensure-environment-protected`)  |
 | `check-release-required`  | Determines if a release is needed based on code changes | Inline (compares changes since last release)       |
 | `codeql`                  | Performs CodeQL security analysis on C# code         | `_wfc_dotnet-ci-codeql.yml`                           |

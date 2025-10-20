@@ -108,11 +108,8 @@ jobs:
     with:
       solutionName: ${{ inputs.solutionName }}
 
-  check-nuget-user:
+  check-nuget-user-populated:
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
     outputs:
       has_nuget_user: ${{ steps.check.outputs.has_nuget_user }}
     env:
@@ -121,17 +118,37 @@ jobs:
       - name: Check if NUGET_USER is set
         id: check
         run: |
-          # Check if we have NUGET_USER configured and OIDC is available
-          if [ -n "$NUGET_USER" ] && [ -n "$ACTIONS_ID_TOKEN_REQUEST_URL" ] && [ -n "$ACTIONS_ID_TOKEN_REQUEST_TOKEN" ]; then
-            echo "::notice::NUGET_USER is configured and OIDC token request capability is available (Trusted Publisher support)"
+          # Check if we have NUGET_USER configured
+          if [ -n "$NUGET_USER" ]; then
+            echo "::notice::NUGET_USER is configured. NuGet publishing enabled."
             echo "has_nuget_user=true" >> "$GITHUB_OUTPUT"
           else
-            if [ -z "$NUGET_USER" ]; then
-              echo "::notice::NUGET_USER not configured. NuGet publishing disabled. Set NUGET_USER secret to enable NuGet package publishing."
-            else
-              echo "::warning::OIDC token request variables not available. Trusted Publisher not supported in this environment."
-            fi
+            echo "::notice::NUGET_USER not configured. NuGet publishing disabled. Set NUGET_USER secret to enable NuGet package publishing."
             echo "has_nuget_user=false" >> "$GITHUB_OUTPUT"
+          fi
+     
+  check-nuget-trusted-publisher-valid:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    needs:
+      check-nuget-user-populated
+    if: needs.check-nuget-user-populated.outputs.has_nuget_user == 'true'
+    steps:
+      - name: Validate NuGet Trusted Publisher login
+        uses: NuGet/login@v1
+        id: nuget-login-test
+        with:
+          user: ${{ secrets.NUGET_USER }}
+      
+      - name: Confirm Trusted Publisher is valid
+        run: |
+          if [ -n "${{ steps.nuget-login-test.outputs.NUGET_API_KEY }}" ]; then
+            echo "::notice::Successfully validated NuGet Trusted Publisher. Temporary API key obtained."
+          else
+            echo "::error::Failed to obtain temporary API key from NuGet Trusted Publisher."
+            exit 1
           fi
      
   check-nuget-environment:
@@ -141,8 +158,9 @@ jobs:
       deployments: read
     runs-on: ubuntu-latest
     needs:
-      check-nuget-user
-    if: needs.check-nuget-user.outputs.has_nuget_user == 'true'
+      - check-nuget-user-populated
+      - check-nuget-trusted-publisher-valid
+    if: needs.check-nuget-user-populated.outputs.has_nuget_user == 'true'
     steps:
       - name: Check if 'nuget' environment exists and has protection rules
         uses: dpvreony/ensure-environment-protected@main
