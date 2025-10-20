@@ -93,6 +93,9 @@ jobs:
       # Optional: enable macOS builds and tests
       # requiresMacOS: true
     secrets:
+      # For Trusted Publishers (OIDC) - Recommended
+      NUGET_USER: ${{ secrets.NUGET_USER }}
+      # For API key authentication - Legacy/Fallback
       NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 ```
@@ -141,14 +144,21 @@ The workflow now supports NuGet.org's Trusted Publishers feature, which uses Ope
 
 **Setup:**
 1. Configure your repository as a Trusted Publisher on NuGet.org for your packages
-2. Ensure the `nuget` environment exists in your repository with appropriate protection rules
-3. The workflow will automatically detect OIDC capability and use it for publishing
+2. Add the `NUGET_USER` secret to your repository with your NuGet.org username (profile name, NOT your email address)
+3. Ensure the `nuget` environment exists in your repository with appropriate protection rules
+4. The workflow will automatically use the `NuGet/login@v1` action to obtain a short-lived API key via OIDC
+
+**Example:**
+```yaml
+secrets:
+  NUGET_USER: ${{ secrets.NUGET_USER }}  # Your NuGet.org profile name
+```
 
 **How it works:**
-- The workflow validates OIDC token availability before requesting approval
-- After approval, the workflow obtains a short-lived OIDC token from GitHub
-- The token is used to authenticate with NuGet.org for package publishing
-- No API key is required when using Trusted Publishers
+- The workflow checks if `NUGET_USER` is configured before requesting approval
+- After approval, the `NuGet/login@v1` action exchanges the GitHub OIDC token for a short-lived NuGet API key
+- The temporary API key is used to authenticate with NuGet.org for package publishing
+- No long-lived API key is required when using Trusted Publishers
 
 ### API Key (Legacy/Fallback)
 
@@ -160,15 +170,16 @@ secrets:
 ```
 
 **Behavior:**
-- If OIDC tokens are available, the workflow will prefer Trusted Publishers
-- If OIDC is not available but an API key is provided, it will use the API key
+- If `NUGET_USER` is configured, the workflow will use Trusted Publishers (OIDC)
+- If `NUGET_USER` is not configured but `NUGET_API_KEY` is provided, it will use the API key
 - If neither is available, the workflow will fail with an error message
 
 **Migration path:**
 1. First, ensure your workflow works with the current API key method
 2. Configure Trusted Publishers on NuGet.org for your packages
-3. Test that OIDC authentication works by monitoring the workflow logs
-4. Once confirmed working, you can remove the `NUGET_API_KEY` secret (optional, can be kept as fallback)
+3. Add the `NUGET_USER` secret to your repository
+4. Test that OIDC authentication works by monitoring the workflow logs
+5. Once confirmed working, you can remove the `NUGET_API_KEY` secret (optional, can be kept as fallback)
 
 ## Key Features
 
