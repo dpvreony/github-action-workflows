@@ -94,6 +94,7 @@ jobs:
       solutionName: ${{ inputs.solutionName }}
 
   codeql:
+    if: github.event.repository.visibility == 'public'
     permissions:
       security-events: write
       actions: read
