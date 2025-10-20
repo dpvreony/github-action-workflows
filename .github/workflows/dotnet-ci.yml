@@ -313,7 +313,7 @@ jobs:
             ${{ needs.build.outputs.change_commit_log }}
 
     - name: NuGet login (OIDC → temp API key)
-      if: secrets.NUGET_USER != ''
+      if: needs.check-nuget-api-key.outputs.has_trusted_publisher == 'true'
       uses: NuGet/login@v1
       id: nuget-login
       with:
