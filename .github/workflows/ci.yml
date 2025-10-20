@@ -13,7 +13,7 @@ permissions:
 jobs:
   build:
     permissions:
-      actions: read
+      actions: write
       contents: write
       deployments: read
       pages: write
