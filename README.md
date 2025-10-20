@@ -180,7 +180,7 @@ This feature requires the `actions: write` permission on the release job to mana
 
 **Example rejection comment:**
 ```
-Superseded by release 1.2.3 (SHA: abc123def456) from run 1234567890
+Superseded by release 1.2.3 (SHA: abc123d) from run 1234567890
 ```
 
 ---
