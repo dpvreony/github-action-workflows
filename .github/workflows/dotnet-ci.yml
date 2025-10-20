@@ -94,6 +94,10 @@ jobs:
       solutionName: ${{ inputs.solutionName }}
 
   codeql:
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
     uses: ./.github/workflows/_wfc_dotnet-ci-codeql.yml
     with:
       solutionName: ${{ inputs.solutionName }}
