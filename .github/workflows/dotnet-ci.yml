@@ -201,6 +201,7 @@ jobs:
       contents: write
       pages: write
       id-token: write
+      actions: write
     runs-on: ubuntu-latest
     needs: [build, check-nuget-environment, check-release-required]
     environment:
@@ -211,6 +212,68 @@ jobs:
       DOTNET_NOLOGO: true
       DOTNET_GENERATE_ASPNET_CERTIFICATE: false
     steps:
+    - name: Cancel old pending releases
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        # Get the current version and SHA
+        CURRENT_VERSION="${{ needs.build.outputs.nbgv }}"
+        CURRENT_SHA="${{ github.sha }}"
+        CURRENT_RUN_ID="${{ github.run_id }}"
+        
+        echo "Current release: $CURRENT_VERSION (SHA: $CURRENT_SHA, Run ID: $CURRENT_RUN_ID)"
+        
+        # Get all workflow runs that are waiting for approval on the nuget environment
+        # Filter for runs on the default branch that are in 'waiting' status
+        pending_runs=$(gh api \
+          -H "Accept: application/vnd.github+json" \
+          -H "X-GitHub-Api-Version: 2022-11-28" \
+          "/repos/${{ github.repository }}/actions/runs?status=waiting&branch=${{ github.event.repository.default_branch }}" \
+          --jq '.workflow_runs[] | select(.id != '$CURRENT_RUN_ID') | .id')
+        
+        if [ -z "$pending_runs" ]; then
+          echo "No pending workflow runs found to cancel"
+          exit 0
+        fi
+        
+        echo "Found pending workflow runs to check: $pending_runs"
+        
+        # For each pending run, check if it has pending deployments for the nuget environment
+        for run_id in $pending_runs; do
+          echo "Checking run $run_id for pending deployments..."
+          
+          # Get pending deployments for this run
+          pending_deployments=$(gh api \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "/repos/${{ github.repository }}/actions/runs/$run_id/pending_deployments" \
+            --jq '.[] | select(.environment.name == "nuget") | .environment.id' 2>/dev/null || echo "")
+          
+          if [ -n "$pending_deployments" ]; then
+            echo "Found pending deployment for nuget environment in run $run_id"
+            
+            # Reject the pending deployment
+            for env_id in $pending_deployments; do
+              echo "Rejecting deployment for environment $env_id in run $run_id"
+              
+              gh api \
+                --method POST \
+                -H "Accept: application/vnd.github+json" \
+                -H "X-GitHub-Api-Version: 2022-11-28" \
+                "/repos/${{ github.repository }}/actions/runs/$run_id/pending_deployments" \
+                -f "environment_ids[]=$env_id" \
+                -f "state=rejected" \
+                -f "comment=Superseded by release $CURRENT_VERSION (SHA: $CURRENT_SHA) from run $CURRENT_RUN_ID" \
+                && echo "Successfully rejected deployment in run $run_id" \
+                || echo "Failed to reject deployment in run $run_id"
+            done
+          else
+            echo "No pending nuget deployment found for run $run_id"
+          fi
+        done
+        
+        echo "Finished canceling old pending releases"
+    
     - name: Download NuGet Packages
       uses: actions/download-artifact@v5
       with:
