@@ -20,7 +20,7 @@ on:
     secrets:
       NUGET_API_KEY:
         required: false
-        description: 'API key used to release NUGET packages'
+        description: 'API key used to release NUGET packages. Optional when using Trusted Publishers (OIDC).'
       SONAR_TOKEN:
         required: false
       SONAR_PROJECT_KEY:
@@ -110,8 +110,12 @@ jobs:
 
   check-nuget-api-key:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     outputs:
       has_api_key: ${{ steps.check.outputs.has_api_key }}
+      has_trusted_publisher: ${{ steps.check-oidc.outputs.has_trusted_publisher }}
     env:
       NUGET_API_KEY: ${{ secrets.nuget_api_key }}
     steps:
@@ -123,6 +127,29 @@ jobs:
           else
             echo "has_api_key=false" >> "$GITHUB_OUTPUT"
           fi
+      
+      - name: Check if OIDC token can be obtained (Trusted Publisher)
+        id: check-oidc
+        run: |
+          # Check if we can get an OIDC token
+          if [ -n "$ACTIONS_ID_TOKEN_REQUEST_URL" ] && [ -n "$ACTIONS_ID_TOKEN_REQUEST_TOKEN" ]; then
+            echo "::notice::OIDC token request capability is available (Trusted Publisher support)"
+            
+            # Try to get a token to validate the setup
+            TOKEN_RESPONSE=$(curl -s -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+              "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=api://AzureADTokenExchange" || echo "")
+            
+            if [ -n "$TOKEN_RESPONSE" ] && echo "$TOKEN_RESPONSE" | grep -q "value"; then
+              echo "::notice::Successfully obtained OIDC token for validation"
+              echo "has_trusted_publisher=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "::warning::Could not obtain OIDC token. Trusted Publisher may not be available."
+              echo "has_trusted_publisher=false" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "::warning::OIDC token request variables not available. Trusted Publisher not supported in this environment."
+            echo "has_trusted_publisher=false" >> "$GITHUB_OUTPUT"
+          fi
      
   check-nuget-environment:
     permissions:
@@ -132,7 +159,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       check-nuget-api-key
-    if: needs.check-nuget-api-key.outputs.has_api_key == 'true'
+    if: needs.check-nuget-api-key.outputs.has_api_key == 'true' || needs.check-nuget-api-key.outputs.has_trusted_publisher == 'true'
     steps:
       - name: Check if 'nuget' environment exists and has protection rules
         uses: dpvreony/ensure-environment-protected@main
@@ -290,7 +317,45 @@ jobs:
 
     - name: NuGet Push
       env:
-        NUGET_AUTH_TOKEN: ${{ secrets.NUGET_API_KEY }}
+        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         SOURCE_URL: https://api.nuget.org/v3/index.json
       run: |
-        dotnet nuget push -s ${{ env.SOURCE_URL }} -k ${{ env.NUGET_AUTH_TOKEN }} **/*.nupkg
+        # Check if we should use Trusted Publishers (OIDC) or API Key
+        USE_TRUSTED_PUBLISHER=false
+        
+        if [ -n "$ACTIONS_ID_TOKEN_REQUEST_URL" ] && [ -n "$ACTIONS_ID_TOKEN_REQUEST_TOKEN" ]; then
+          echo "::notice::OIDC token request capability is available. Attempting to use Trusted Publishers..."
+          
+          # Request OIDC token with NuGet.org as the audience
+          # NuGet.org expects the audience to be "api://AzureADTokenExchange"
+          TOKEN_RESPONSE=$(curl -s -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=api://AzureADTokenExchange")
+          
+          if [ -n "$TOKEN_RESPONSE" ]; then
+            OIDC_TOKEN=$(echo "$TOKEN_RESPONSE" | jq -r '.value' 2>/dev/null || echo "")
+            
+            if [ -n "$OIDC_TOKEN" ] && [ "$OIDC_TOKEN" != "null" ]; then
+              echo "::notice::Successfully obtained OIDC token. Using Trusted Publishers for NuGet push."
+              USE_TRUSTED_PUBLISHER=true
+              export NUGET_AUTH_TOKEN="$OIDC_TOKEN"
+            else
+              echo "::warning::Could not extract OIDC token from response. Falling back to API key if available."
+            fi
+          else
+            echo "::warning::Could not obtain OIDC token response. Falling back to API key if available."
+          fi
+        else
+          echo "::notice::OIDC token request not available. Using API key authentication."
+        fi
+        
+        # Perform the push
+        if [ "$USE_TRUSTED_PUBLISHER" = "true" ]; then
+          echo "::notice::Pushing packages using Trusted Publishers (OIDC token)..."
+          dotnet nuget push -s ${{ env.SOURCE_URL }} -k "$NUGET_AUTH_TOKEN" **/*.nupkg
+        elif [ -n "$NUGET_API_KEY" ]; then
+          echo "::notice::Pushing packages using API key..."
+          dotnet nuget push -s ${{ env.SOURCE_URL }} -k "$NUGET_API_KEY" **/*.nupkg
+        else
+          echo "::error::Neither Trusted Publisher (OIDC) nor API key is available. Cannot push packages."
+          exit 1
+        fi
