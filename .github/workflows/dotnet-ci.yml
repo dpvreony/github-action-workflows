@@ -93,6 +93,21 @@ jobs:
     with:
       solutionName: ${{ inputs.solutionName }}
 
+  check-codeql-enabled:
+    uses: ./.github/workflows/_wfc_dotnet-ci-check-codeql-enabled.yml
+
+  codeql:
+    needs: check-codeql-enabled
+    if: needs.check-codeql-enabled.outputs.codeql_enabled == 'true'
+    permissions:
+      security-events: write
+      packages: read
+      actions: read
+      contents: read
+    uses: ./.github/workflows/_wfc_dotnet-ci-codeql.yml
+    with:
+      solutionName: ${{ inputs.solutionName }}
+
   check-nuget-api-key:
     runs-on: ubuntu-latest
     outputs:

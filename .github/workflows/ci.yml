@@ -19,6 +19,8 @@ jobs:
       pages: write
       id-token: write
       pull-requests: write
+      security-events: write
+      packages: read
     uses: ./.github/workflows/dotnet-ci.yml
     with:
       solutionName: "Workflow"
