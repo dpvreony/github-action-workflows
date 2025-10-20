@@ -18,9 +18,9 @@ on:
         default: false
         description: 'If true, also builds and tests on macOS (never releases from macOS)'
     secrets:
-      NUGET_API_KEY:
+      NUGET_USER:
         required: false
-        description: 'API key used to release NUGET packages'
+        description: 'NuGet.org username (profile name) for Trusted Publishers (OIDC). Set this secret to enable NuGet package publishing. Use your profile name, NOT your email address.'
       SONAR_TOKEN:
         required: false
       SONAR_PROJECT_KEY:
@@ -108,20 +108,47 @@ jobs:
     with:
       solutionName: ${{ inputs.solutionName }}
 
-  check-nuget-api-key:
+  check-nuget-user-populated:
     runs-on: ubuntu-latest
     outputs:
-      has_api_key: ${{ steps.check.outputs.has_api_key }}
+      has_nuget_user: ${{ steps.check.outputs.has_nuget_user }}
     env:
-      NUGET_API_KEY: ${{ secrets.nuget_api_key }}
+      NUGET_USER: ${{ secrets.NUGET_USER }}
     steps:
-      - name: Check if NUGET_API_KEY is set
+      - name: Check if NUGET_USER is set
         id: check
         run: |
-          if [ -n "$NUGET_API_KEY" ]; then
-            echo "has_api_key=true" >> "$GITHUB_OUTPUT"
+          # Check if we have NUGET_USER configured
+          if [ -n "$NUGET_USER" ]; then
+            echo "::notice::NUGET_USER is configured. NuGet publishing enabled."
+            echo "has_nuget_user=true" >> "$GITHUB_OUTPUT"
           else
-            echo "has_api_key=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::NUGET_USER not configured. NuGet publishing disabled. Set NUGET_USER secret to enable NuGet package publishing."
+            echo "has_nuget_user=false" >> "$GITHUB_OUTPUT"
+          fi
+     
+  check-nuget-trusted-publisher-valid:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    needs:
+      check-nuget-user-populated
+    if: needs.check-nuget-user-populated.outputs.has_nuget_user == 'true'
+    steps:
+      - name: Validate NuGet Trusted Publisher login
+        uses: NuGet/login@v1
+        id: nuget-login-test
+        with:
+          user: ${{ secrets.NUGET_USER }}
+      
+      - name: Confirm Trusted Publisher is valid
+        run: |
+          if [ -n "${{ steps.nuget-login-test.outputs.NUGET_API_KEY }}" ]; then
+            echo "::notice::Successfully validated NuGet Trusted Publisher. Temporary API key obtained."
+          else
+            echo "::error::Failed to obtain temporary API key from NuGet Trusted Publisher."
+            exit 1
           fi
      
   check-nuget-environment:
@@ -131,8 +158,9 @@ jobs:
       deployments: read
     runs-on: ubuntu-latest
     needs:
-      check-nuget-api-key
-    if: needs.check-nuget-api-key.outputs.has_api_key == 'true'
+      - check-nuget-user-populated
+      - check-nuget-trusted-publisher-valid
+    if: needs.check-nuget-user-populated.outputs.has_nuget_user == 'true'
     steps:
       - name: Check if 'nuget' environment exists and has protection rules
         uses: dpvreony/ensure-environment-protected@main
@@ -288,9 +316,16 @@ jobs:
           body: |
             ${{ needs.build.outputs.change_commit_log }}
 
+    - name: NuGet login (OIDC → temp API key)
+      uses: NuGet/login@v1
+      id: nuget-login
+      with:
+        user: ${{ secrets.NUGET_USER }}
+    
     - name: NuGet Push
       env:
-        NUGET_AUTH_TOKEN: ${{ secrets.NUGET_API_KEY }}
+        NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
         SOURCE_URL: https://api.nuget.org/v3/index.json
       run: |
-        dotnet nuget push -s ${{ env.SOURCE_URL }} -k ${{ env.NUGET_AUTH_TOKEN }} **/*.nupkg
+        echo "::notice::Using Trusted Publishers (OIDC) for NuGet push..."
+        dotnet nuget push -s "$SOURCE_URL" -k "$NUGET_API_KEY" **/*.nupkg
