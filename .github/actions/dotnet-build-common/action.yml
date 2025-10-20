@@ -1,0 +1,281 @@
+name: 'Common .NET Build Steps'
+description: 'Shared setup, build, test, and pack steps for .NET projects'
+inputs:
+  solutionName:
+    description: 'Name of the solution file WITHOUT the extension'
+    required: true
+  isPrimaryBuildOs:
+    description: 'If true, this OS will upload release artifacts'
+    required: true
+  osName:
+    description: 'OS name for artifact naming (e.g., linux, windows, macos)'
+    required: true
+  codecovToken:
+    description: 'Codecov token for coverage upload'
+    required: false
+  sonarToken:
+    description: 'Sonar token for scanning'
+    required: false
+  sonarProjectKey:
+    description: 'Sonar project key'
+    required: false
+  sonarOrganisationKey:
+    description: 'Sonar organisation key'
+    required: false
+  githubToken:
+    description: 'GitHub token for Sonar'
+    required: false
+  virusTotalApiKey:
+    description: 'VirusTotal API key'
+    required: false
+outputs:
+  nbgvVersion:
+    description: 'NBGV SemVer2 version'
+    value: ${{ steps.nbgv.outputs.SemVer2 }}
+  changeCommitLog:
+    description: 'Changelog commit log'
+    value: ${{ steps.changelog.outputs.commitLog }}
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Java 17
+      uses: actions/setup-java@v5
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+    
+    - name: Install .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        global-json-file: "./global.json"
+    
+    - name: Install DotNet workloads
+      shell: pwsh
+      run: |
+        if ($IsWindows) {
+          dotnet workload install android aspire ios tvos macos maui
+        } elseif ($IsMacOS) {
+          dotnet workload install android aspire ios tvos macos maui
+        } else {
+          # Linux - skip iOS, tvOS, macOS, and maui workloads (not supported)
+          dotnet workload install android aspire
+        }
+        dotnet workload list
+      working-directory: src
+    
+    - name: Cleanup nuget local storage
+      shell: pwsh
+      run: |
+        dotnet nuget locals all --clear
+      working-directory: src
+    
+    - name: NBGV
+      id: nbgv
+      uses: dotnet/nbgv@master
+      with:
+        setAllVars: true
+    
+    - name: Install dotnet tools
+      shell: pwsh
+      run: dotnet tool restore
+      working-directory: src
+    
+    - name: Changelog
+      uses: glennawatson/ChangeLog@v1
+      id: changelog
+    
+    - name: Prepare Artifact Directory
+      shell: pwsh
+      run: |
+        New-Item -ItemType Directory -Force -Path artifacts/nupkg | Out-Null
+        New-Item -ItemType Directory -Force -Path artifacts/outdated | Out-Null
+        New-Item -ItemType Directory -Force -Path artifacts/sbom | Out-Null
+        New-Item -ItemType Directory -Force -Path artifacts/binlog | Out-Null
+    
+    - name: Restore Packages
+      shell: pwsh
+      working-directory: src
+      run: |
+        dotnet restore ${{ inputs.solutionName }}.sln /bl:${{ github.workspace }}/artifacts/binlog/restore.binlog
+    
+    - name: Report Changelog Summary
+      shell: pwsh
+      run: |
+        $changecommitlog = @'
+        ${{ steps.changelog.outputs.commitLog }}
+        '@
+        $changecommitlog = $changecommitlog.Replace('"', '''')
+        $lines = $changecommitlog -split "`n"
+        foreach ($line in $lines) {
+          Write-Output "::notice::$line"
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value $line
+        }
+    
+    - name: Run Sonar Scanner begin
+      if: inputs.isPrimaryBuildOs == 'true' && inputs.sonarToken != '' && inputs.sonarProjectKey != '' && inputs.sonarOrganisationKey != ''
+      shell: pwsh
+      working-directory: src
+      run: |
+        dotnet sonarscanner begin /k:"${{ inputs.sonarProjectKey }}" /d:sonar.login="${{ inputs.sonarToken }}" /d:sonar.host.url="https://sonarcloud.io" /o:"${{ inputs.sonarOrganisationKey }}" /d:sonar.cs.opencover.reportsPaths="${{ github.workspace }}/artifacts/unittestcoverage/coverage.xml"
+    
+    - name: Run Build
+      id: run-build
+      shell: pwsh
+      working-directory: src
+      run: |
+        $env:CHANGE_COMMIT_LOG = @'
+        ${{ steps.changelog.outputs.commitLog }}
+        '@
+        dotnet build ${{ inputs.solutionName }}.sln --configuration Release --no-restore /bl:${{ github.workspace }}/artifacts/binlog/build.binlog /p:ContinuousIntegrationBuild=true
+    
+    - name: Run Unit Tests
+      shell: pwsh
+      working-directory: src
+      run: |
+        dotnet test ${{ inputs.solutionName }}.UnitTests/${{ inputs.solutionName }}.UnitTests.csproj --verbosity normal --configuration Release --no-build /bl:${{ github.workspace }}/artifacts/binlog/unittest.binlog --nologo --logger GitHubActions -- --coverage --coverage-output-format cobertura --coverage-output coverage.xml --long-running 10 --results-directory ${{ github.workspace }}/artifacts/unittestcoverage
+    
+    - name: Run Sonar Scanner end
+      if: inputs.isPrimaryBuildOs == 'true' && inputs.sonarToken != '' && inputs.sonarProjectKey != '' && inputs.sonarOrganisationKey != ''
+      shell: pwsh
+      working-directory: src
+      run: |
+        $env:GITHUB_TOKEN = "${{ inputs.githubToken }}"
+        dotnet sonarscanner end /d:sonar.login="${{ inputs.sonarToken }}"
+    
+    - name: Run BinLogStats for Build
+      if: always() && !cancelled() && (steps.run-build.outcome == 'success' || steps.run-build.outcome == 'failure')
+      shell: pwsh
+      working-directory: src
+      run: |
+        dotnet gripe-msbuildlogstats -bl ../artifacts/binlog/build.binlog
+    
+    - name: Report Unit Test Coverage
+      shell: pwsh
+      run: |
+        $opencoverxmlpath = Get-ChildItem 'artifacts/unittestcoverage/coverage.xml' -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($opencoverxmlpath) {
+          $xml = [xml](Get-Content $opencoverxmlpath)
+          $unitTestCoverage = $xml.CoverageSession.Summary.branchCoverage
+          $coverageMessage = "Unit Test Coverage: $unitTestCoverage"
+          Write-Output "::notice::$coverageMessage"
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value $coverageMessage
+        }
+    
+    - name: Run Integration Tests
+      shell: pwsh
+      working-directory: src
+      run: |
+        dotnet test ${{ inputs.solutionName }}.IntegrationTests/${{ inputs.solutionName }}.IntegrationTests.csproj --configuration Release --no-build --nologo /bl:../artifacts/binlog/inttest.binlog --logger "GitHubActions;verbosity=normal" -- --coverage --coverage-output-format cobertura --coverage-output coverage.xml --long-running 10 --results-directory ${{ github.workspace }}/artifacts/inttestcoverage
+    
+    - name: Report Integration Test Coverage
+      shell: pwsh
+      run: |
+        $opencoverxmlpath = Get-ChildItem 'artifacts/inttestcoverage/coverage.xml' -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($opencoverxmlpath) {
+          $xml = [xml](Get-Content $opencoverxmlpath)
+          $intTestCoverage = $xml.CoverageSession.Summary.branchCoverage
+          $coverageMessage = "Integration Test Coverage: $intTestCoverage"
+          Write-Output "::notice::$coverageMessage"
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value $coverageMessage
+        }
+    
+    - name: Produce Nuget Packages
+      if: inputs.isPrimaryBuildOs == 'true'
+      shell: pwsh
+      working-directory: src
+      run: |
+        $env:CHANGE_COMMIT_LOG = @'
+        ${{ steps.changelog.outputs.commitLog }}
+        '@
+        dotnet pack ${{ inputs.solutionName }}.sln --configuration Release --no-build /bl:${{ github.workspace }}/artifacts/binlog/pack.binlog --nologo /p:PackageOutputPath=${{ github.workspace }}/artifacts/nuget /p:ContinuousIntegrationBuild=true
+    
+    - name: Generate SBOM
+      if: inputs.isPrimaryBuildOs == 'true'
+      shell: pwsh
+      run: |
+        dotnet sbom-tool generate -b artifacts/nuget -bc src -pn ${{ inputs.solutionName }} -pv ${{ steps.nbgv.outputs.SimpleVersion }} -ps "DHGMS Solutions" -nsb https://sbom.dhgms.com -m artifacts/sbom
+    
+    - name: List outdated packages
+      if: inputs.isPrimaryBuildOs == 'true'
+      shell: pwsh
+      working-directory: src
+      run: |
+        dotnet outdated -o ${{ github.workspace }}/artifacts/outdated/outdated.json
+    
+    - name: VirusTotal Monitor Scan
+      if: inputs.isPrimaryBuildOs == 'true' && inputs.virusTotalApiKey != ''
+      uses: crazy-max/ghaction-virustotal@v4
+      with:
+        vt_api_key: ${{ inputs.virusTotalApiKey }}
+        vt_monitor: true
+        monitor_path: /ghaction-virustotal
+        files: |
+          ./artifacts/nuget/*.nupkg
+    
+    - name: Upload Code Coverage
+      if: inputs.codecovToken != ''
+      shell: pwsh
+      run: |
+        if ($IsLinux) {
+          curl -Os https://uploader.codecov.io/latest/linux/codecov
+          chmod +x codecov
+          ./codecov -s 'artifacts/unittestcoverage' -f '*.xml' -v -t '${{ inputs.codecovToken }}'
+        } elseif ($IsMacOS) {
+          curl -Os https://uploader.codecov.io/latest/macos/codecov
+          chmod +x codecov
+          ./codecov -s 'artifacts/unittestcoverage' -f '*.xml' -v -t '${{ inputs.codecovToken }}'
+        } elseif ($IsWindows) {
+          Invoke-WebRequest -Uri https://uploader.codecov.io/latest/windows/codecov.exe -Outfile codecov.exe
+          .\codecov.exe -s 'artifacts/unittestcoverage' -f '*.xml' -v -t '${{ inputs.codecovToken }}'
+        }
+    
+    - name: store binlogs
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: binlogs-${{ inputs.osName }}
+        path: artifacts/binlog
+    
+    - name: store unit test coverage
+      if: inputs.isPrimaryBuildOs == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: unittestcoverage
+        path: artifacts/unittestcoverage
+        if-no-files-found: error
+    
+    - name: store integration test coverage
+      if: inputs.isPrimaryBuildOs == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: inttestcoverage
+        path: artifacts/inttestcoverage
+    
+    - name: store nuget packages
+      if: inputs.isPrimaryBuildOs == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: nuget
+        path: artifacts/nuget
+        if-no-files-found: error
+    
+    - name: store omd
+      if: inputs.isPrimaryBuildOs == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: omd
+        path: artifacts/omd
+    
+    - name: store sbom
+      if: inputs.isPrimaryBuildOs == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: sbom
+        path: artifacts/sbom
+    
+    - name: store outdated
+      if: inputs.isPrimaryBuildOs == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: outdated
+        path: artifacts/outdated

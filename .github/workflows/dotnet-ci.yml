@@ -7,6 +7,16 @@ on:
         required: true
         type: string
         description: 'Name of the solution file WITHOUT the extension. On top of running the build. It is ued to calculate the format of the unit tests, benchmarks and integration tests.'
+      buildOs:
+        required: false
+        type: string
+        default: 'linux'
+        description: 'Primary OS for build and pack. Options: linux, windows. Default: linux'
+      requiresMacOS:
+        required: false
+        type: boolean
+        default: false
+        description: 'If true, also builds and tests on macOS (never releases from macOS)'
     secrets:
       NUGET_API_KEY:
         required: false
@@ -27,6 +37,14 @@ jobs:
     uses: ./.github/workflows/_wfc_dotnet-ci-build.yml
     with:
       solutionName: ${{ inputs.solutionName }}
+      buildOs: ${{ inputs.buildOs }}
+      requiresMacOS: ${{ inputs.requiresMacOS }}
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
+      SONAR_ORGANISATION_KEY: ${{ secrets.SONAR_ORGANISATION_KEY }}
+      VIRUSTOTAL_API_KEY: ${{ secrets.VIRUSTOTAL_API_KEY }}
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   licenses:
     uses: ./.github/workflows/_wfc_dotnet-ci-licenses.yml

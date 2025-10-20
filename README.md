@@ -6,8 +6,26 @@ This repository contains a reusable GitHub Actions workflow for building, analyz
 
 - **Main Workflow:** `.github/workflows/dotnet-ci.yml`
   - Trigger: `workflow_call`
-  - Input: `solutionName` (required) — Name of the solution file **without** extension.
+  - Inputs:
+    - `solutionName` (required) — Name of the solution file **without** extension.
+    - `buildOs` (optional) — Primary OS for build and pack. Options: `linux` (default), `windows`.
+    - `requiresMacOS` (optional) — If `true`, also builds and tests on macOS (never releases from macOS). Default: `false`.
   - Secrets: Supports optional secrets for NuGet, SonarCloud, VirusTotal, Codecov, etc.
+
+## Multi-OS Build Support
+
+The workflow supports building and testing on multiple operating systems:
+
+- **Linux (default):** The default primary OS for building, packing, and testing. All release artifacts are generated on Linux by default.
+- **Windows:** Can be configured as the primary OS for building and packing when required. Set `buildOs: windows` to use Windows as the primary build OS.
+- **macOS (optional):** Can be enabled for additional build and test coverage. macOS builds never generate release artifacts. Enable with `requiresMacOS: true`.
+
+**Key behaviors:**
+- Only the **primary OS** (specified by `buildOs`) generates and uploads release artifacts (NuGet packages, SBOM, etc.)
+- When the primary OS is set to Windows, Linux does not run build/pack operations to avoid duplicate artifacts
+- macOS builds, when enabled, only build and test - they never pack or release
+- Test coverage is uploaded only from the primary OS
+- Binlog artifacts are OS-specific and include the OS name in the artifact name
 
 ## Jobs Overview
 
@@ -15,7 +33,10 @@ The workflow consists of several jobs, many of which delegate their logic to ded
 
 | Job Name                  | Description                                           | Implementation File                                   |
 |---------------------------|------------------------------------------------------|-------------------------------------------------------|
-| `build`                   | Builds the specified solution                        | `_wfc_dotnet-ci-build.yml`                            |
+| `build`                   | Orchestrates multi-OS builds                         | `_wfc_dotnet-ci-build.yml` (orchestrator)              |
+| `build-linux`             | Builds on Linux (when selected as primary OS)        | `_wfc_dotnet-ci-build-linux.yml`                      |
+| `build-windows`           | Builds on Windows (when selected as primary OS)      | `_wfc_dotnet-ci-build-windows.yml`                    |
+| `build-macos`             | Builds on macOS (optional, never releases)           | `_wfc_dotnet-ci-build-macos.yml`                      |
 | `licenses`                | Checks project licenses                              | `_wfc_dotnet-ci-licenses.yml`                         |
 | `snitch`                  | A tool that helps you find duplicate transitive package references | `_wfc_dotnet-ci-snitch.yml`                           |
 | `appinspector`            | code feature analysis                                 | `_wfc_dotnet-ci-appinspector.yml`                     |
@@ -33,7 +54,10 @@ The workflow consists of several jobs, many of which delegate their logic to ded
 
 These workflow files are referenced by the main workflow via the `uses:` keyword:
 
-- `.github/workflows/_wfc_dotnet-ci-build.yml`
+- `.github/workflows/_wfc_dotnet-ci-build.yml` (orchestrator for multi-OS builds)
+- `.github/workflows/_wfc_dotnet-ci-build-linux.yml` (Linux-specific build)
+- `.github/workflows/_wfc_dotnet-ci-build-windows.yml` (Windows-specific build)
+- `.github/workflows/_wfc_dotnet-ci-build-macos.yml` (macOS-specific build)
 - `.github/workflows/_wfc_dotnet-ci-licenses.yml`
 - `.github/workflows/_wfc_dotnet-ci-snitch.yml`
 - `.github/workflows/_wfc_dotnet-ci-appinspector.yml`
@@ -60,13 +84,52 @@ jobs:
     uses: dpvreony/github-action-workflows/.github/workflows/dotnet-ci.yml@main
     with:
       solutionName: MySolution
+      # Optional: specify Windows as the primary build OS
+      # buildOs: windows
+      # Optional: enable macOS builds and tests
+      # requiresMacOS: true
     secrets:
       NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 ```
 
+### Multi-OS Usage Examples
+
+**Default (Linux only):**
+```yaml
+uses: dpvreony/github-action-workflows/.github/workflows/dotnet-ci.yml@main
+with:
+  solutionName: MySolution
+```
+
+**Windows as primary OS:**
+```yaml
+uses: dpvreony/github-action-workflows/.github/workflows/dotnet-ci.yml@main
+with:
+  solutionName: MySolution
+  buildOs: windows
+```
+
+**Linux with additional macOS builds:**
+```yaml
+uses: dpvreony/github-action-workflows/.github/workflows/dotnet-ci.yml@main
+with:
+  solutionName: MySolution
+  requiresMacOS: true
+```
+
+**Windows with additional macOS builds:**
+```yaml
+uses: dpvreony/github-action-workflows/.github/workflows/dotnet-ci.yml@main
+with:
+  solutionName: MySolution
+  buildOs: windows
+  requiresMacOS: true
+```
+
 ## Key Features
 
+- **Multi-OS Support:** Build and test on Linux, Windows, and macOS with configurable primary OS for releases.
 - **Modular Design:** Uses sub-workflows for modularity and reusability.
 - **Security:** Checks for environment protection before NuGet release.
 - **Smart Release Detection:** Automatically determines if a release is needed by comparing changes since the last release, excluding test files.

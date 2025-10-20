@@ -1,0 +1,66 @@
+name: dotnet-build-linux
+
+on:
+  workflow_call:
+    inputs:
+      solutionName:
+        required: true
+        type: string
+      isPrimaryBuildOs:
+        required: false
+        type: boolean
+        default: true
+        description: 'If true, this OS will upload release artifacts (nuget packages, SBOM, etc.)'
+    secrets:
+      SONAR_TOKEN:
+        required: false
+      SONAR_PROJECT_KEY:
+        required: false
+      SONAR_ORGANISATION_KEY:
+        required: false
+      VIRUSTOTAL_API_KEY:
+        required: false
+      CODECOV_TOKEN:
+        required: false
+    outputs:
+      nbgv:
+        description: 'NBGV SemVer2 version'
+        value: ${{ jobs.build.outputs.nbgv }}
+      change_commit_log:
+        description: 'Change commit log'
+        value: ${{ jobs.build.outputs.change_commit_log }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      nbgv: ${{ steps.common-build.outputs.nbgvVersion }}
+      change_commit_log: ${{ steps.common-build.outputs.changeCommitLog }}
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: 1
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+      DOTNET_NOLOGO: true
+      DOTNET_GENERATE_ASPNET_CERTIFICATE: false
+      solutionpath: ${{ inputs.solutionName }}.sln
+      unittestprojectpath: ${{ inputs.solutionName }}.UnitTests/${{ inputs.solutionName }}.UnitTests.csproj
+      inttestprojectpath: ${{ inputs.solutionName }}.IntegrationTests/${{ inputs.solutionName }}.IntegrationTests.csproj
+      benchmarkprojectpath: ${{ inputs.solutionName }}.Benchmarks/${{ inputs.solutionName }}.Benchmarks.csproj
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        with:
+          fetch-depth: 0
+      
+      - name: Run Common Build Steps
+        id: common-build
+        uses: ./.github/actions/dotnet-build-common
+        with:
+          solutionName: ${{ inputs.solutionName }}
+          isPrimaryBuildOs: ${{ inputs.isPrimaryBuildOs }}
+          osName: linux
+          codecovToken: ${{ secrets.CODECOV_TOKEN }}
+          sonarToken: ${{ secrets.SONAR_TOKEN }}
+          sonarProjectKey: ${{ secrets.SONAR_PROJECT_KEY }}
+          sonarOrganisationKey: ${{ secrets.SONAR_ORGANISATION_KEY }}
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          virusTotalApiKey: ${{ secrets.VIRUSTOTAL_API_KEY }}
