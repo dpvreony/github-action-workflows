@@ -101,6 +101,7 @@ jobs:
     if: needs.check-codeql-enabled.outputs.codeql_enabled == 'true'
     permissions:
       security-events: write
+      packages: read
       actions: read
       contents: read
     uses: ./.github/workflows/_wfc_dotnet-ci-codeql.yml
