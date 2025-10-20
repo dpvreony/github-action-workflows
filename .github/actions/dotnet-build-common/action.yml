@@ -67,7 +67,6 @@ runs:
       shell: pwsh
       run: |
         dotnet nuget locals all --clear
-        dotnet nuget remove source "Microsoft Visual Studio Offline Packages" 2>&1 | Out-Null
       working-directory: src
     
     - name: NBGV
