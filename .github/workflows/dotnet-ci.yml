@@ -18,12 +18,9 @@ on:
         default: false
         description: 'If true, also builds and tests on macOS (never releases from macOS)'
     secrets:
-      NUGET_API_KEY:
-        required: false
-        description: 'API key used to release NUGET packages. Optional when using Trusted Publishers (OIDC).'
       NUGET_USER:
         required: false
-        description: 'NuGet.org username (profile name) for Trusted Publishers (OIDC). Required when using Trusted Publishers. Use your profile name, NOT your email address.'
+        description: 'NuGet.org username (profile name) for Trusted Publishers (OIDC). Set this secret to enable NuGet package publishing. Use your profile name, NOT your email address.'
       SONAR_TOKEN:
         required: false
       SONAR_PROJECT_KEY:
@@ -111,41 +108,30 @@ jobs:
     with:
       solutionName: ${{ inputs.solutionName }}
 
-  check-nuget-api-key:
+  check-nuget-user:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
       contents: read
     outputs:
-      has_api_key: ${{ steps.check.outputs.has_api_key }}
-      has_trusted_publisher: ${{ steps.check-oidc.outputs.has_trusted_publisher }}
+      has_nuget_user: ${{ steps.check.outputs.has_nuget_user }}
     env:
-      NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
       NUGET_USER: ${{ secrets.NUGET_USER }}
     steps:
-      - name: Check if NUGET_API_KEY is set
+      - name: Check if NUGET_USER is set
         id: check
-        run: |
-          if [ -n "$NUGET_API_KEY" ]; then
-            echo "has_api_key=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_api_key=false" >> "$GITHUB_OUTPUT"
-          fi
-      
-      - name: Check if OIDC token can be obtained (Trusted Publisher)
-        id: check-oidc
         run: |
           # Check if we have NUGET_USER configured and OIDC is available
           if [ -n "$NUGET_USER" ] && [ -n "$ACTIONS_ID_TOKEN_REQUEST_URL" ] && [ -n "$ACTIONS_ID_TOKEN_REQUEST_TOKEN" ]; then
             echo "::notice::NUGET_USER is configured and OIDC token request capability is available (Trusted Publisher support)"
-            echo "has_trusted_publisher=true" >> "$GITHUB_OUTPUT"
+            echo "has_nuget_user=true" >> "$GITHUB_OUTPUT"
           else
             if [ -z "$NUGET_USER" ]; then
-              echo "::notice::NUGET_USER not configured. Trusted Publisher not available. Set NUGET_USER secret to use Trusted Publishers."
+              echo "::notice::NUGET_USER not configured. NuGet publishing disabled. Set NUGET_USER secret to enable NuGet package publishing."
             else
               echo "::warning::OIDC token request variables not available. Trusted Publisher not supported in this environment."
             fi
-            echo "has_trusted_publisher=false" >> "$GITHUB_OUTPUT"
+            echo "has_nuget_user=false" >> "$GITHUB_OUTPUT"
           fi
      
   check-nuget-environment:
@@ -155,8 +141,8 @@ jobs:
       deployments: read
     runs-on: ubuntu-latest
     needs:
-      check-nuget-api-key
-    if: needs.check-nuget-api-key.outputs.has_api_key == 'true' || needs.check-nuget-api-key.outputs.has_trusted_publisher == 'true'
+      check-nuget-user
+    if: needs.check-nuget-user.outputs.has_nuget_user == 'true'
     steps:
       - name: Check if 'nuget' environment exists and has protection rules
         uses: dpvreony/ensure-environment-protected@main
@@ -313,7 +299,6 @@ jobs:
             ${{ needs.build.outputs.change_commit_log }}
 
     - name: NuGet login (OIDC → temp API key)
-      if: needs.check-nuget-api-key.outputs.has_trusted_publisher == 'true'
       uses: NuGet/login@v1
       id: nuget-login
       with:
@@ -321,19 +306,8 @@ jobs:
     
     - name: NuGet Push
       env:
-        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
-        NUGET_OIDC_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
+        NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
         SOURCE_URL: https://api.nuget.org/v3/index.json
       run: |
-        # Check if we should use Trusted Publishers (OIDC) or API Key
-        if [ -n "$NUGET_OIDC_KEY" ]; then
-          echo "::notice::Using Trusted Publishers (OIDC) for NuGet push..."
-          dotnet nuget push -s "$SOURCE_URL" -k "$NUGET_OIDC_KEY" **/*.nupkg
-        elif [ -n "$NUGET_API_KEY" ]; then
-          echo "::notice::Using API key for NuGet push..."
-          dotnet nuget push -s "$SOURCE_URL" -k "$NUGET_API_KEY" **/*.nupkg
-        else
-          echo "::error::Neither Trusted Publisher (OIDC) nor API key is available. Cannot push packages."
-          echo "::error::Please configure either NUGET_USER secret (for Trusted Publishers) or NUGET_API_KEY secret."
-          exit 1
-        fi
+        echo "::notice::Using Trusted Publishers (OIDC) for NuGet push..."
+        dotnet nuget push -s "$SOURCE_URL" -k "$NUGET_API_KEY" **/*.nupkg

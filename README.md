@@ -39,7 +39,7 @@ The workflow consists of several jobs, many of which delegate their logic to ded
 | `build-macos`             | Builds on macOS (optional, never releases)           | `_wfc_dotnet-ci-build-macos.yml`                      |
 | `build-windows`           | Builds on Windows (when selected as primary OS)      | `_wfc_dotnet-ci-build-windows.yml`                    |
 | `check-codeql-enabled`    | Checks if CodeQL should run based on repository visibility and Advanced Security settings | `_wfc_dotnet-ci-check-codeql-enabled.yml`             |
-| `check-nuget-api-key`     | Checks if NuGet API key is set and validates OIDC token availability for Trusted Publishers | Inline                                                |
+| `check-nuget-user`        | Checks if NUGET_USER is set and validates OIDC token availability for Trusted Publishers | Inline                                                |
 | `check-nuget-environment` | Validates NuGet environment protection               | Inline (uses `dpvreony/ensure-environment-protected`)  |
 | `check-release-required`  | Determines if a release is needed based on code changes | Inline (compares changes since last release)       |
 | `codeql`                  | Performs CodeQL security analysis on C# code         | `_wfc_dotnet-ci-codeql.yml`                           |
@@ -47,7 +47,7 @@ The workflow consists of several jobs, many of which delegate their logic to ded
 | `deprecated-nuget-packages` | Checks for deprecated NuGet packages               | `_wfc_dotnet-ci-deprecated-nuget-packages.yml`        |
 | `licenses`                | Checks project licenses                              | `_wfc_dotnet-ci-licenses.yml`                         |
 | `omd-generation`          | Generates object-modeling technique (OMT) diagrams   | `_wfc_dotnet-ci-omd-generation.yml`                   |
-| `release`                 | Creates a GitHub release and pushes NuGet packages using Trusted Publishers (OIDC) or API key | Inline (uses `actions/create-release` & `dotnet nuget push`) |
+| `release`                 | Creates a GitHub release and pushes NuGet packages using Trusted Publishers (OIDC) | Inline (uses `actions/create-release` & `NuGet/login@v1`) |
 | `snitch`                  | A tool that helps you find duplicate transitive package references | `_wfc_dotnet-ci-snitch.yml`                           |
 | `validate-renovate`       | Validates Renovate configuration                     | Inline (uses `dpvreony/github-action-renovate-config-validator`) |
 | `vulnerable-nuget-packages` | Checks for vulnerable NuGet packages               | `_wfc_dotnet-ci-vulnerable-nuget-packages.yml`        |
@@ -93,10 +93,8 @@ jobs:
       # Optional: enable macOS builds and tests
       # requiresMacOS: true
     secrets:
-      # For Trusted Publishers (OIDC) - Recommended
+      # For Trusted Publishers (OIDC) - Required for NuGet publishing
       NUGET_USER: ${{ secrets.NUGET_USER }}
-      # For API key authentication - Legacy/Fallback
-      NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 ```
 
@@ -136,11 +134,7 @@ with:
 
 ## NuGet Publishing
 
-The workflow supports two methods for publishing NuGet packages:
-
-### Trusted Publishers (Recommended)
-
-The workflow now supports NuGet.org's Trusted Publishers feature, which uses OpenID Connect (OIDC) tokens instead of API keys. This is more secure as it eliminates the need to store long-lived API keys as secrets.
+The workflow uses NuGet.org's Trusted Publishers feature, which uses OpenID Connect (OIDC) tokens instead of API keys. This is more secure as it eliminates the need to store long-lived API keys as secrets.
 
 **Setup:**
 1. Configure your repository as a Trusted Publisher on NuGet.org for your packages
@@ -158,28 +152,11 @@ secrets:
 - The workflow checks if `NUGET_USER` is configured before requesting approval
 - After approval, the `NuGet/login@v1` action exchanges the GitHub OIDC token for a short-lived NuGet API key
 - The temporary API key is used to authenticate with NuGet.org for package publishing
-- No long-lived API key is required when using Trusted Publishers
+- No long-lived API key is required
 
-### API Key (Legacy/Fallback)
-
-For backward compatibility, the workflow still supports API key-based publishing:
-
-```yaml
-secrets:
-  NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
-```
-
-**Behavior:**
-- If `NUGET_USER` is configured, the workflow will use Trusted Publishers (OIDC)
-- If `NUGET_USER` is not configured but `NUGET_API_KEY` is provided, it will use the API key
-- If neither is available, the workflow will fail with an error message
-
-**Migration path:**
-1. First, ensure your workflow works with the current API key method
-2. Configure Trusted Publishers on NuGet.org for your packages
-3. Add the `NUGET_USER` secret to your repository
-4. Test that OIDC authentication works by monitoring the workflow logs
-5. Once confirmed working, you can remove the `NUGET_API_KEY` secret (optional, can be kept as fallback)
+**Enabling/Disabling NuGet Publishing:**
+- Set the `NUGET_USER` secret to enable NuGet package publishing
+- Remove or unset the `NUGET_USER` secret to disable NuGet package publishing
 
 ## Key Features
 
