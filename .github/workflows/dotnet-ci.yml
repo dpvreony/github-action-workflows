@@ -94,42 +94,7 @@ jobs:
       solutionName: ${{ inputs.solutionName }}
 
   check-codeql-enabled:
-    runs-on: ubuntu-latest
-    outputs:
-      codeql_enabled: ${{ steps.check.outputs.codeql_enabled }}
-    permissions:
-      contents: read
-    steps:
-      - name: Check if CodeQL should run
-        id: check
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          # Check if repository is public
-          if [ "${{ github.event.repository.visibility }}" == "public" ]; then
-            echo "Repository is public, CodeQL is available"
-            echo "codeql_enabled=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          
-          # For private repos, check if Advanced Security is enabled
-          echo "Repository is private, checking Advanced Security status..."
-          
-          # Use GitHub CLI to check if Advanced Security is enabled
-          if command -v gh &> /dev/null; then
-            security_status=$(gh api repos/${{ github.repository }} --jq '.security_and_analysis.advanced_security.status' 2>/dev/null || echo "unknown")
-            
-            if [ "$security_status" == "enabled" ]; then
-              echo "Advanced Security is enabled"
-              echo "codeql_enabled=true" >> "$GITHUB_OUTPUT"
-            else
-              echo "Advanced Security is not enabled or unavailable"
-              echo "codeql_enabled=false" >> "$GITHUB_OUTPUT"
-            fi
-          else
-            echo "GitHub CLI not available, skipping Advanced Security check"
-            echo "codeql_enabled=false" >> "$GITHUB_OUTPUT"
-          fi
+    uses: ./.github/workflows/_wfc_dotnet-ci-check-codeql-enabled.yml
 
   codeql:
     needs: check-codeql-enabled
