@@ -117,7 +117,7 @@ jobs:
       has_api_key: ${{ steps.check.outputs.has_api_key }}
       has_trusted_publisher: ${{ steps.check-oidc.outputs.has_trusted_publisher }}
     env:
-      NUGET_API_KEY: ${{ secrets.nuget_api_key }}
+      NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
     steps:
       - name: Check if NUGET_API_KEY is set
         id: check
@@ -134,16 +134,20 @@ jobs:
           # Check if we can get an OIDC token
           if [ -n "$ACTIONS_ID_TOKEN_REQUEST_URL" ] && [ -n "$ACTIONS_ID_TOKEN_REQUEST_TOKEN" ]; then
             echo "::notice::OIDC token request capability is available (Trusted Publisher support)"
-            
+
             # Try to get a token to validate the setup
-            TOKEN_RESPONSE=$(curl -s -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-              "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=api://AzureADTokenExchange" || echo "")
-            
-            if [ -n "$TOKEN_RESPONSE" ] && echo "$TOKEN_RESPONSE" | grep -q "value"; then
-              echo "::notice::Successfully obtained OIDC token for validation"
-              echo "has_trusted_publisher=true" >> "$GITHUB_OUTPUT"
+            if TOKEN_RESPONSE=$(curl -f -s -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+              "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=api://AzureADTokenExchange" 2>&1); then
+
+              if [ -n "$TOKEN_RESPONSE" ] && echo "$TOKEN_RESPONSE" | grep -q "value"; then
+                echo "::notice::Successfully obtained OIDC token for validation"
+                echo "has_trusted_publisher=true" >> "$GITHUB_OUTPUT"
+              else
+                echo "::warning::Could not obtain OIDC token. Trusted Publisher may not be available."
+                echo "has_trusted_publisher=false" >> "$GITHUB_OUTPUT"
+              fi
             else
-              echo "::warning::Could not obtain OIDC token. Trusted Publisher may not be available."
+              echo "::warning::Failed to request OIDC token: $TOKEN_RESPONSE"
               echo "has_trusted_publisher=false" >> "$GITHUB_OUTPUT"
             fi
           else
@@ -322,32 +326,38 @@ jobs:
       run: |
         # Check if we should use Trusted Publishers (OIDC) or API Key
         USE_TRUSTED_PUBLISHER=false
-        
+        NUGET_AUTH_TOKEN=""
+
         if [ -n "$ACTIONS_ID_TOKEN_REQUEST_URL" ] && [ -n "$ACTIONS_ID_TOKEN_REQUEST_TOKEN" ]; then
           echo "::notice::OIDC token request capability is available. Attempting to use Trusted Publishers..."
-          
+
           # Request OIDC token with NuGet.org as the audience
           # NuGet.org expects the audience to be "api://AzureADTokenExchange"
-          TOKEN_RESPONSE=$(curl -s -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=api://AzureADTokenExchange")
-          
-          if [ -n "$TOKEN_RESPONSE" ]; then
-            OIDC_TOKEN=$(echo "$TOKEN_RESPONSE" | jq -r '.value' 2>/dev/null || echo "")
-            
+          if TOKEN_RESPONSE=$(curl -f -s -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=api://AzureADTokenExchange" 2>&1); then
+
+            # jq is available on GitHub-hosted runners by default
+            if command -v jq &> /dev/null; then
+              OIDC_TOKEN=$(echo "$TOKEN_RESPONSE" | jq -r '.value' 2>/dev/null || echo "")
+            else
+              # Fallback: simple grep/sed extraction if jq is not available
+              OIDC_TOKEN=$(echo "$TOKEN_RESPONSE" | grep -o '"value":"[^"]*"' | sed 's/"value":"//;s/"$//')
+            fi
+
             if [ -n "$OIDC_TOKEN" ] && [ "$OIDC_TOKEN" != "null" ]; then
               echo "::notice::Successfully obtained OIDC token. Using Trusted Publishers for NuGet push."
               USE_TRUSTED_PUBLISHER=true
-              export NUGET_AUTH_TOKEN="$OIDC_TOKEN"
+              NUGET_AUTH_TOKEN="$OIDC_TOKEN"
             else
               echo "::warning::Could not extract OIDC token from response. Falling back to API key if available."
             fi
           else
-            echo "::warning::Could not obtain OIDC token response. Falling back to API key if available."
+            echo "::warning::Failed to request OIDC token: $TOKEN_RESPONSE. Falling back to API key if available."
           fi
         else
           echo "::notice::OIDC token request not available. Using API key authentication."
         fi
-        
+
         # Perform the push
         if [ "$USE_TRUSTED_PUBLISHER" = "true" ]; then
           echo "::notice::Pushing packages using Trusted Publishers (OIDC token)..."
