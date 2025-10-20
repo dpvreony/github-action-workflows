@@ -134,6 +134,7 @@ with:
 - **Security:** Checks for environment protection before NuGet release.
 - **Smart Release Detection:** Automatically determines if a release is needed by comparing changes since the last release, excluding test files.
 - **Old Build Protection:** Prevents outdated builds from triggering releases when a newer release already exists.
+- **Pending Release Cancellation:** Automatically rejects old pending releases when a new release is approved.
 - **Release Automation:** Creates GitHub releases and pushes NuGet packages.
 - **Dependency Checks:** Reviews dependencies and validates Renovate configs.
 - **Comprehensive Analysis:** Includes code inspection, license checking, object-modeling technique (OMT) diagram generation, vulnerable and deprecated NuGet package checks.
@@ -161,6 +162,26 @@ When checking if a release is required, the workflow verifies that the current c
 - Build A (now outdated) is prevented from triggering a release
 
 The check uses git ancestry to determine if the current commit is an ancestor of the latest release's commit. If so, the build is considered outdated and `release_required` is set to `false`, preventing any release from being created.
+
+### Pending Release Cancellation
+
+When a new release is approved in the `nuget` environment, the workflow automatically cancels any older releases that are still waiting for approval. This prevents confusion and ensures only the most recent version gets released.
+
+The cancellation process:
+
+1. When a release job enters the `nuget` environment (after approval), it first checks for other workflow runs in 'waiting' status
+2. For each waiting workflow run, it checks if there are pending deployments to the `nuget` environment
+3. Any pending deployments found are automatically rejected with a comment explaining:
+   - The version that superseded them
+   - The commit SHA of the new release
+   - The workflow run ID that was approved
+
+This feature requires the `actions: write` permission on the release job to manage deployment approvals.
+
+**Example rejection comment:**
+```
+Superseded by release 1.2.3 (SHA: abc123def456) from run 1234567890
+```
 
 ---
 
