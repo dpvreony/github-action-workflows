@@ -361,10 +361,10 @@ jobs:
         # Perform the push
         if [ "$USE_TRUSTED_PUBLISHER" = "true" ]; then
           echo "::notice::Pushing packages using Trusted Publishers (OIDC token)..."
-          dotnet nuget push -s ${{ env.SOURCE_URL }} -k "$NUGET_AUTH_TOKEN" **/*.nupkg
+          dotnet nuget push -s "$SOURCE_URL" -k "$NUGET_AUTH_TOKEN" **/*.nupkg
         elif [ -n "$NUGET_API_KEY" ]; then
           echo "::notice::Pushing packages using API key..."
-          dotnet nuget push -s ${{ env.SOURCE_URL }} -k "$NUGET_API_KEY" **/*.nupkg
+          dotnet nuget push -s "$SOURCE_URL" -k "$NUGET_API_KEY" **/*.nupkg
         else
           echo "::error::Neither Trusted Publisher (OIDC) nor API key is available. Cannot push packages."
           exit 1
