@@ -33,37 +33,41 @@ The workflow consists of several jobs, many of which delegate their logic to ded
 
 | Job Name                  | Description                                           | Implementation File                                   |
 |---------------------------|------------------------------------------------------|-------------------------------------------------------|
+| `appinspector`            | Code feature analysis                                 | `_wfc_dotnet-ci-appinspector.yml`                     |
 | `build`                   | Orchestrates multi-OS builds                         | `_wfc_dotnet-ci-build.yml` (orchestrator)              |
 | `build-linux`             | Builds on Linux (when selected as primary OS)        | `_wfc_dotnet-ci-build-linux.yml`                      |
-| `build-windows`           | Builds on Windows (when selected as primary OS)      | `_wfc_dotnet-ci-build-windows.yml`                    |
 | `build-macos`             | Builds on macOS (optional, never releases)           | `_wfc_dotnet-ci-build-macos.yml`                      |
-| `licenses`                | Checks project licenses                              | `_wfc_dotnet-ci-licenses.yml`                         |
-| `snitch`                  | A tool that helps you find duplicate transitive package references | `_wfc_dotnet-ci-snitch.yml`                           |
-| `appinspector`            | code feature analysis                                 | `_wfc_dotnet-ci-appinspector.yml`                     |
-| `omd-generation`          | Generates object-modeling technique (OMT) diagrams   | `_wfc_dotnet-ci-omd-generation.yml`                   |
-| `vulnerable-nuget-packages` | Checks for vulnerable NuGet packages               | `_wfc_dotnet-ci-vulnerable-nuget-packages.yml`        |
-| `deprecated-nuget-packages` | Checks for deprecated NuGet packages               | `_wfc_dotnet-ci-deprecated-nuget-packages.yml`        |
-| `dependency-review`       | Reviews new/changed dependencies (PR only)           | Inline (uses `actions/dependency-review-action`)       |
-| `validate-renovate`       | Validates Renovate configuration                     | Inline (uses `dpvreony/github-action-renovate-config-validator`) |
+| `build-windows`           | Builds on Windows (when selected as primary OS)      | `_wfc_dotnet-ci-build-windows.yml`                    |
+| `check-codeql-enabled`    | Checks if CodeQL should run based on repository visibility and Advanced Security settings | `_wfc_dotnet-ci-check-codeql-enabled.yml`             |
 | `check-nuget-api-key`     | Checks if NuGet API key is set                       | Inline                                                |
 | `check-nuget-environment` | Validates NuGet environment protection               | Inline (uses `dpvreony/ensure-environment-protected`)  |
 | `check-release-required`  | Determines if a release is needed based on code changes | Inline (compares changes since last release)       |
+| `codeql`                  | Performs CodeQL security analysis on C# code         | `_wfc_dotnet-ci-codeql.yml`                           |
+| `dependency-review`       | Reviews new/changed dependencies (PR only)           | Inline (uses `actions/dependency-review-action`)       |
+| `deprecated-nuget-packages` | Checks for deprecated NuGet packages               | `_wfc_dotnet-ci-deprecated-nuget-packages.yml`        |
+| `licenses`                | Checks project licenses                              | `_wfc_dotnet-ci-licenses.yml`                         |
+| `omd-generation`          | Generates object-modeling technique (OMT) diagrams   | `_wfc_dotnet-ci-omd-generation.yml`                   |
 | `release`                 | Creates a GitHub release and pushes NuGet packages   | Inline (uses `actions/create-release` & `dotnet nuget push`) |
+| `snitch`                  | A tool that helps you find duplicate transitive package references | `_wfc_dotnet-ci-snitch.yml`                           |
+| `validate-renovate`       | Validates Renovate configuration                     | Inline (uses `dpvreony/github-action-renovate-config-validator`) |
+| `vulnerable-nuget-packages` | Checks for vulnerable NuGet packages               | `_wfc_dotnet-ci-vulnerable-nuget-packages.yml`        |
 
 ### Sub-workflow Files
 
 These workflow files are referenced by the main workflow via the `uses:` keyword:
 
+- `.github/workflows/_wfc_dotnet-ci-appinspector.yml`
 - `.github/workflows/_wfc_dotnet-ci-build.yml` (orchestrator for multi-OS builds)
 - `.github/workflows/_wfc_dotnet-ci-build-linux.yml` (Linux-specific build)
-- `.github/workflows/_wfc_dotnet-ci-build-windows.yml` (Windows-specific build)
 - `.github/workflows/_wfc_dotnet-ci-build-macos.yml` (macOS-specific build)
-- `.github/workflows/_wfc_dotnet-ci-licenses.yml`
-- `.github/workflows/_wfc_dotnet-ci-snitch.yml`
-- `.github/workflows/_wfc_dotnet-ci-appinspector.yml`
-- `.github/workflows/_wfc_dotnet-ci-omd-generation.yml`
-- `.github/workflows/_wfc_dotnet-ci-vulnerable-nuget-packages.yml`
+- `.github/workflows/_wfc_dotnet-ci-build-windows.yml` (Windows-specific build)
+- `.github/workflows/_wfc_dotnet-ci-check-codeql-enabled.yml`
+- `.github/workflows/_wfc_dotnet-ci-codeql.yml`
 - `.github/workflows/_wfc_dotnet-ci-deprecated-nuget-packages.yml`
+- `.github/workflows/_wfc_dotnet-ci-licenses.yml`
+- `.github/workflows/_wfc_dotnet-ci-omd-generation.yml`
+- `.github/workflows/_wfc_dotnet-ci-snitch.yml`
+- `.github/workflows/_wfc_dotnet-ci-vulnerable-nuget-packages.yml`
 
 These files implement the detailed logic for each stage of the workflow. You can customize or extend them as needed.
 
@@ -131,7 +135,7 @@ with:
 
 - **Multi-OS Support:** Build and test on Linux, Windows, and macOS with configurable primary OS for releases.
 - **Modular Design:** Uses sub-workflows for modularity and reusability.
-- **Security:** Checks for environment protection before NuGet release.
+- **Security:** Checks for environment protection before NuGet release. Includes CodeQL security analysis for public repositories and private repositories with Advanced Security enabled.
 - **Smart Release Detection:** Automatically determines if a release is needed by comparing changes since the last release, excluding test files.
 - **Old Build Protection:** Prevents outdated builds from triggering releases when a newer release already exists.
 - **Release Automation:** Creates GitHub releases and pushes NuGet packages.
