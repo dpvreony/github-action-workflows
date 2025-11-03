@@ -74,7 +74,7 @@ runs:
       uses: dotnet/nbgv@master
       with:
         setAllVars: true
-      working-directory: a
+        path: a
     
     - name: Install dotnet tools
       shell: pwsh
@@ -84,6 +84,8 @@ runs:
     - name: Changelog
       uses: glennawatson/ChangeLog@v1
       id: changelog
+      with:
+        path: a
     
     - name: Prepare Artifact Directory
       shell: pwsh
