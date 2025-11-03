@@ -46,14 +46,23 @@ jobs:
       inttestprojectpath: ${{ inputs.solutionName }}.IntegrationTests/${{ inputs.solutionName }}.IntegrationTests.csproj
       benchmarkprojectpath: ${{ inputs.solutionName }}.Benchmarks/${{ inputs.solutionName }}.Benchmarks.csproj
     steps:
-      - name: Checkout code
+      # Two-checkout pattern: checkout triggering repo and this repo for action access
+      - name: Checkout repository being built
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:
+          path: a
+          fetch-depth: 0
+      
+      - name: Checkout github-action-workflows (actions & scripts)
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        with:
+          repository: dpvreony/github-action-workflows
+          path: github-action-workflows
           fetch-depth: 0
       
       - name: Run Common Build Steps
         id: common-build
-        uses: ./.github/actions/dotnet-build-common
+        uses: ./github-action-workflows/.github/actions/dotnet-build-common
         with:
           solutionName: ${{ inputs.solutionName }}
           isPrimaryBuildOs: ${{ inputs.isPrimaryBuildOs }}
