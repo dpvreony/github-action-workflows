@@ -74,6 +74,7 @@ runs:
       uses: dotnet/nbgv@master
       with:
         setAllVars: true
+      working-directory: a
     
     - name: Install dotnet tools
       shell: pwsh
