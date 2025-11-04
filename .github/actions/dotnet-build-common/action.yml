@@ -78,7 +78,7 @@ runs:
     
     - name: Install dotnet tools
       shell: pwsh
-      run: dotnet tool restore --tool-manifest github-action-workflows/.config/dotnet-tools.json
+      run: dotnet tool restore --tool-manifest ../github-action-workflows/.config/dotnet-tools.json
       working-directory: a
     
     - name: Changelog
