@@ -150,7 +150,7 @@ runs:
       shell: pwsh
       working-directory: a/src
       run: |
-        dotnet gripe-msbuildlogstats -bl ../artifacts/binlog/build.binlog
+        dotnet gripe-msbuildlogstats -bl :${{ github.workspace }}/artifacts/binlog/build.binlog
     
     - name: Report Unit Test Coverage
       shell: pwsh
