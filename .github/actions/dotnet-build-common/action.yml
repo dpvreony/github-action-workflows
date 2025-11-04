@@ -195,8 +195,9 @@ runs:
     - name: Generate SBOM
       if: inputs.isPrimaryBuildOs == 'true'
       shell: pwsh
+      working-directory: a
       run: |
-        dotnet sbom-tool generate -b artifacts/nuget -bc a/src -pn ${{ inputs.solutionName }} -pv ${{ steps.nbgv.outputs.SimpleVersion }} -ps "DHGMS Solutions" -nsb https://sbom.dhgms.com -m artifacts/sbom
+        dotnet sbom-tool generate -b ${{ github.workspace }}/artifacts/nuget -bc src -pn ${{ inputs.solutionName }} -pv ${{ steps.nbgv.outputs.SimpleVersion }} -ps "DHGMS Solutions" -nsb https://sbom.dhgms.com -m ${{ github.workspace }}/artifacts/sbom
     
     - name: List outdated packages
       if: inputs.isPrimaryBuildOs == 'true'
