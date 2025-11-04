@@ -72,6 +72,26 @@ These workflow files are referenced by the main workflow via the `uses:` keyword
 
 These files implement the detailed logic for each stage of the workflow. You can customize or extend them as needed.
 
+## Architecture: Two-Checkout Pattern
+
+The per-OS build workflows (`_wfc_dotnet-ci-build-linux.yml`, `_wfc_dotnet-ci-build-macos.yml`, `_wfc_dotnet-ci-build-windows.yml`) use a **two-checkout pattern** to enable proper operation when called from other repositories:
+
+1. **Triggering Repository Checkout** (`path: a`): The repository being built is checked out to the `a` directory. This contains the source code, solution files, and `global.json` that define the .NET project being built.
+
+2. **Workflow Repository Checkout** (`path: github-action-workflows`): This repository (containing the reusable workflows and composite actions) is checked out to the `github-action-workflows` directory. This provides access to the composite action files at `.github/actions/dotnet-build-common/`.
+
+**Why is this necessary?**
+
+When a workflow is triggered via `workflow_call` from another repository, GitHub Actions only checks out the triggering repository by default. Since the build workflows use a local composite action (`.github/actions/dotnet-build-common`), that action's files must be available in the runner workspace. The two-checkout pattern solves this by explicitly checking out both repositories.
+
+**Key implementation details:**
+
+- The composite action uses `a/global.json` to determine the .NET SDK version
+- All build operations work in the `a/src` directory
+- Artifact outputs remain in the runner workspace root under `artifacts/`
+- The composite action is referenced via `./github-action-workflows/.github/actions/dotnet-build-common`
+
+
 ## Usage
 
 To use this workflow in your repository:

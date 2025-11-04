@@ -47,7 +47,7 @@ runs:
     - name: Install .NET
       uses: actions/setup-dotnet@v5
       with:
-        global-json-file: "./global.json"
+        global-json-file: "a/global.json"
     
     - name: Install DotNet workloads
       shell: pwsh
@@ -61,28 +61,31 @@ runs:
           dotnet workload install android aspire
         }
         dotnet workload list
-      working-directory: src
+      working-directory: a/src
     
     - name: Cleanup nuget local storage
       shell: pwsh
       run: |
         dotnet nuget locals all --clear
-      working-directory: src
+      working-directory: a/src
     
     - name: NBGV
       id: nbgv
       uses: dotnet/nbgv@master
       with:
         setAllVars: true
+        path: a
     
     - name: Install dotnet tools
       shell: pwsh
       run: dotnet tool restore
-      working-directory: src
+      working-directory: github-action-workflows/src
     
     - name: Changelog
       uses: glennawatson/ChangeLog@v1
       id: changelog
+      with:
+        path: a
     
     - name: Prepare Artifact Directory
       shell: pwsh
@@ -94,7 +97,7 @@ runs:
     
     - name: Restore Packages
       shell: pwsh
-      working-directory: src
+      working-directory: a/src
       run: |
         dotnet restore ${{ inputs.solutionName }}.sln /bl:${{ github.workspace }}/artifacts/binlog/restore.binlog
     
@@ -114,14 +117,14 @@ runs:
     - name: Run Sonar Scanner begin
       if: inputs.isPrimaryBuildOs == 'true' && inputs.sonarToken != '' && inputs.sonarProjectKey != '' && inputs.sonarOrganisationKey != ''
       shell: pwsh
-      working-directory: src
+      working-directory: a/src
       run: |
         dotnet sonarscanner begin /k:"${{ inputs.sonarProjectKey }}" /d:sonar.login="${{ inputs.sonarToken }}" /d:sonar.host.url="https://sonarcloud.io" /o:"${{ inputs.sonarOrganisationKey }}" /d:sonar.cs.opencover.reportsPaths="${{ github.workspace }}/artifacts/unittestcoverage/coverage.xml"
     
     - name: Run Build
       id: run-build
       shell: pwsh
-      working-directory: src
+      working-directory: a/src
       run: |
         $env:CHANGE_COMMIT_LOG = @'
         ${{ steps.changelog.outputs.commitLog }}
@@ -130,14 +133,14 @@ runs:
     
     - name: Run Unit Tests
       shell: pwsh
-      working-directory: src
+      working-directory: a/src
       run: |
         dotnet test ${{ inputs.solutionName }}.UnitTests/${{ inputs.solutionName }}.UnitTests.csproj --verbosity normal --configuration Release --no-build /bl:${{ github.workspace }}/artifacts/binlog/unittest.binlog --nologo --logger GitHubActions -- --coverage --coverage-output-format cobertura --coverage-output coverage.xml --long-running 10 --results-directory ${{ github.workspace }}/artifacts/unittestcoverage
     
     - name: Run Sonar Scanner end
       if: inputs.isPrimaryBuildOs == 'true' && inputs.sonarToken != '' && inputs.sonarProjectKey != '' && inputs.sonarOrganisationKey != ''
       shell: pwsh
-      working-directory: src
+      working-directory: a/src
       run: |
         $env:GITHUB_TOKEN = "${{ inputs.githubToken }}"
         dotnet sonarscanner end /d:sonar.login="${{ inputs.sonarToken }}"
@@ -145,9 +148,9 @@ runs:
     - name: Run BinLogStats for Build
       if: always() && !cancelled() && (steps.run-build.outcome == 'success' || steps.run-build.outcome == 'failure')
       shell: pwsh
-      working-directory: src
+      working-directory: a/src
       run: |
-        dotnet gripe-msbuildlogstats -bl ../artifacts/binlog/build.binlog
+        dotnet gripe-msbuildlogstats -bl "${{ github.workspace }}/artifacts/binlog/build.binlog"
     
     - name: Report Unit Test Coverage
       shell: pwsh
@@ -163,7 +166,7 @@ runs:
     
     - name: Run Integration Tests
       shell: pwsh
-      working-directory: src
+      working-directory: a/src
       run: |
         dotnet test ${{ inputs.solutionName }}.IntegrationTests/${{ inputs.solutionName }}.IntegrationTests.csproj --configuration Release --no-build --nologo /bl:../artifacts/binlog/inttest.binlog --logger "GitHubActions;verbosity=normal" -- --coverage --coverage-output-format cobertura --coverage-output coverage.xml --long-running 10 --results-directory ${{ github.workspace }}/artifacts/inttestcoverage
     
@@ -182,7 +185,7 @@ runs:
     - name: Produce Nuget Packages
       if: inputs.isPrimaryBuildOs == 'true'
       shell: pwsh
-      working-directory: src
+      working-directory: a/src
       run: |
         $env:CHANGE_COMMIT_LOG = @'
         ${{ steps.changelog.outputs.commitLog }}
@@ -192,13 +195,14 @@ runs:
     - name: Generate SBOM
       if: inputs.isPrimaryBuildOs == 'true'
       shell: pwsh
+      working-directory: a
       run: |
-        dotnet sbom-tool generate -b artifacts/nuget -bc src -pn ${{ inputs.solutionName }} -pv ${{ steps.nbgv.outputs.SimpleVersion }} -ps "DHGMS Solutions" -nsb https://sbom.dhgms.com -m artifacts/sbom
+        dotnet sbom-tool generate -b ${{ github.workspace }}/artifacts/nuget -bc src -pn ${{ inputs.solutionName }} -pv ${{ steps.nbgv.outputs.SimpleVersion }} -ps "DHGMS Solutions" -nsb https://sbom.dhgms.com -m ${{ github.workspace }}/artifacts/sbom
     
     - name: List outdated packages
       if: inputs.isPrimaryBuildOs == 'true'
       shell: pwsh
-      working-directory: src
+      working-directory: a/src
       run: |
         dotnet outdated -o ${{ github.workspace }}/artifacts/outdated/outdated.json
     
