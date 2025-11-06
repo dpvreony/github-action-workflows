@@ -18,6 +18,9 @@ on:
         default: false
         description: 'If true, also builds and tests on macOS (never releases from macOS)'
     secrets:
+      NUGET_API_KEY:
+        required: false
+        description: 'NuGet.org API key for fallback package publishing.'
       NUGET_USER:
         required: false
         description: 'NuGet.org username (profile name) for Trusted Publishers (OIDC). Set this secret to enable NuGet package publishing. Use your profile name, NOT your email address.'
@@ -123,7 +126,7 @@ jobs:
             echo "::notice::NUGET_USER is configured. NuGet publishing enabled."
             echo "has_nuget_user=true" >> "$GITHUB_OUTPUT"
           else
-            echo "::notice::NUGET_USER not configured. NuGet publishing disabled. Set NUGET_USER secret to enable NuGet package publishing."
+            echo "::notice::NUGET_USER not configured."
             echo "has_nuget_user=false" >> "$GITHUB_OUTPUT"
           fi
 
@@ -141,7 +144,7 @@ jobs:
             echo "::notice::NUGET_API_KEY is configured. NuGet publishing enabled."
             echo "has_api_key=true" >> "$GITHUB_OUTPUT"
           else
-            echo "::notice::NUGET_API_KEY not configured. NuGet publishing disabled. Set NUGET_API_KEY secret to enable NuGet package publishing."
+            echo "::notice::NUGET_API_KEY not configured."
             echo "has_api_key=false" >> "$GITHUB_OUTPUT"
           fi
           
