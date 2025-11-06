@@ -138,8 +138,10 @@ jobs:
         id: check
         run: |
           if [ -n "$NUGET_API_KEY" ]; then
+            echo "::notice::NUGET_API_KEY is configured. NuGet publishing enabled."
             echo "has_api_key=true" >> "$GITHUB_OUTPUT"
           else
+            echo "::notice::NUGET_API_KEY not configured. NuGet publishing disabled. Set NUGET_API_KEY secret to enable NuGet package publishing."
             echo "has_api_key=false" >> "$GITHUB_OUTPUT"
           fi
           
