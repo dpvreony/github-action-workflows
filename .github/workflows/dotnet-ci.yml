@@ -126,7 +126,23 @@ jobs:
             echo "::notice::NUGET_USER not configured. NuGet publishing disabled. Set NUGET_USER secret to enable NuGet package publishing."
             echo "has_nuget_user=false" >> "$GITHUB_OUTPUT"
           fi
-     
+
+  check-nuget-api-key-populated:
+    runs-on: ubuntu-latest
+    outputs:
+      has_api_key: ${{ steps.check.outputs.has_api_key }}
+    env:
+      NUGET_API_KEY: ${{ secrets.nuget_api_key }}
+    steps:
+      - name: Check if NUGET_API_KEY is set
+        id: check
+        run: |
+          if [ -n "$NUGET_API_KEY" ]; then
+            echo "has_api_key=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_api_key=false" >> "$GITHUB_OUTPUT"
+          fi
+          
   check-nuget-trusted-publisher-valid:
     runs-on: ubuntu-latest
     permissions:
@@ -159,8 +175,9 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - check-nuget-user-populated
+      - check-nuget-api-key-populated
       - check-nuget-trusted-publisher-valid
-    if: needs.check-nuget-user-populated.outputs.has_nuget_user == 'true'
+    if: needs.check-nuget-user-populated.outputs.has_nuget_user == 'true' || needs.check-nuget-api-key-populated.outputs.has_api_key == 'true'
     steps:
       - name: Check if 'nuget' environment exists and has protection rules
         uses: dpvreony/ensure-environment-protected@main
@@ -318,14 +335,23 @@ jobs:
 
     - name: NuGet login (OIDC → temp API key)
       uses: NuGet/login@v1
+      if: needs.check-nuget-user-populated.outputs.has_nuget_user == 'true'
       id: nuget-login
       with:
         user: ${{ secrets.NUGET_USER }}
     
-    - name: NuGet Push
+    - name: NuGet Push (Trusted Publisher)
       env:
         NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
         SOURCE_URL: https://api.nuget.org/v3/index.json
       run: |
         echo "::notice::Using Trusted Publishers (OIDC) for NuGet push..."
         dotnet nuget push -s "$SOURCE_URL" -k "$NUGET_API_KEY" **/*.nupkg
+
+    - name: NuGet Push (API_KEY)
+      env:
+        NUGET_AUTH_TOKEN: ${{ secrets.NUGET_API_KEY }}
+        SOURCE_URL: https://api.nuget.org/v3/index.json
+      if: needs.check-nuget-api-key-populated.outputs.has_api_key == 'true'
+      run: |
+        dotnet nuget push -s ${{ env.SOURCE_URL }} -k ${{ env.NUGET_AUTH_TOKEN }} **/*.nupkg
