@@ -341,6 +341,7 @@ jobs:
         user: ${{ secrets.NUGET_USER }}
     
     - name: NuGet Push (Trusted Publisher)
+      if: needs.check-nuget-user-populated.outputs.has_nuget_user == 'true'
       env:
         NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
         SOURCE_URL: https://api.nuget.org/v3/index.json
