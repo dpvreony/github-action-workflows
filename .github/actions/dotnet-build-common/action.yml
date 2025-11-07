@@ -100,6 +100,11 @@ runs:
         
         # Get list of already installed tools once
         $installedToolsOutput = dotnet tool list --global
+        if ($LASTEXITCODE -ne 0) {
+          Write-Error "Failed to list installed tools"
+          exit $LASTEXITCODE
+        }
+        
         $installedToolsList = @()
         if ($installedToolsOutput) {
           $installedToolsList = $installedToolsOutput -split "`n" | Select-Object -Skip 2 | Where-Object { $_.Trim() -ne "" }
@@ -114,26 +119,20 @@ runs:
           $escapedToolName = [regex]::Escape($toolName)
           $isInstalled = $installedToolsList | Where-Object { $_ -match "^$escapedToolName\s+" }
           
-          try {
-            if ($isInstalled) {
-              Write-Output "Updating $toolName to version $version..."
-              dotnet tool update --global $toolName --version $version
-              if ($LASTEXITCODE -ne 0) {
-                Write-Error "Failed to update $toolName"
-                exit $LASTEXITCODE
-              }
-            } else {
-              Write-Output "Installing $toolName version $version..."
-              dotnet tool install --global $toolName --version $version
-              if ($LASTEXITCODE -ne 0) {
-                Write-Error "Failed to install $toolName"
-                exit $LASTEXITCODE
-              }
+          if ($isInstalled) {
+            Write-Output "Updating $toolName to version $version..."
+            dotnet tool update --global $toolName --version $version
+            if ($LASTEXITCODE -ne 0) {
+              Write-Error "Failed to update $toolName"
+              exit $LASTEXITCODE
             }
-          }
-          catch {
-            Write-Error "Error processing tool $toolName: $_"
-            exit 1
+          } else {
+            Write-Output "Installing $toolName version $version..."
+            dotnet tool install --global $toolName --version $version
+            if ($LASTEXITCODE -ne 0) {
+              Write-Error "Failed to install $toolName"
+              exit $LASTEXITCODE
+            }
           }
         }
         
