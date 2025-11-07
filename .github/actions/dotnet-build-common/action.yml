@@ -78,7 +78,15 @@ runs:
     
     - name: Install dotnet tools
       shell: pwsh
-      run: dotnet tool restore --tool-manifest ../github-action-workflows/.config/dotnet-tools.json
+      run: |
+        $jsonPath = "../github-action-workflows/.config/dotnet-tools.json"
+        $json = Get-Content $jsonPath -Raw | ConvertFrom-Json
+        foreach ($toolName in $json.tools.PSObject.Properties.Name) {
+          $tool = $json.tools.$toolName
+          $version = $tool.version
+          Write-Output "Installing $toolName version $version globally..."
+          dotnet tool install --global $toolName --version $version
+        }
       working-directory: a
     
     - name: Changelog
