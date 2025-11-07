@@ -111,6 +111,7 @@ The composite action parses the `dotnet-tools.json` file directly and installs e
 - No path resolution issues between the two checked-out repositories
 - Simplified tool invocation (just use the tool name, e.g., `dotnet-outdated` instead of `dotnet tool run dotnet-outdated`)
 - Consistent tool availability across all workflow steps
+- Updating of the tools remains "as-is" (i.e. Renovate)
 
 This strategy makes the workflow more maintainable and eliminates the complexity of managing tool paths across repository boundaries.
 
