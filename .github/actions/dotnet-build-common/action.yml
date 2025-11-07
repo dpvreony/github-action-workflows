@@ -82,7 +82,8 @@ runs:
     # for some tools as things like sonar need the current dir to be the src folder
     - name: Copy dot-net tool config
       shell: pwsh
-      run: Copy-Item -Path "github-action-workflows/.config/dotnet-tools.json" -Destination ".config/dotnet-tools.json"
+      run: Copy-Item -Path "../github-action-workflows/.config/dotnet-tools.json" -Destination "../.config/dotnet-tools.json"
+      working-directory: a
       
     - name: Install dotnet tools
       shell: pwsh
