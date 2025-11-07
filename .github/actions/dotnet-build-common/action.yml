@@ -98,49 +98,18 @@ runs:
           exit 1
         }
         
-        # Get list of already installed tools once
-        $installedToolsOutput = dotnet tool list --global
-        if ($LASTEXITCODE -ne 0) {
-          Write-Error "Failed to list installed tools"
-          exit $LASTEXITCODE
-        }
-        
-        $installedToolsList = @()
-        if ($installedToolsOutput) {
-          # Use platform-agnostic line splitting
-          $lines = $installedToolsOutput -split '\r?\n'
-          # Skip header lines (first line is "Package Id...", second is dashes)
-          # and filter out empty lines
-          $installedToolsList = $lines | Select-Object -Skip 2 | Where-Object { $_.Trim() -ne "" }
-        }
-        
         foreach ($toolName in $json.tools.PSObject.Properties.Name) {
           $tool = $json.tools.$toolName
           $version = $tool.version
-          Write-Output "Processing $toolName version $version..."
-          
-          # Check if tool is already installed (escape tool name for regex)
-          $escapedToolName = [regex]::Escape($toolName)
-          $isInstalled = $installedToolsList | Where-Object { $_ -match "^$escapedToolName\s+" }
-          
-          if ($isInstalled) {
-            Write-Output "Updating $toolName to version $version..."
-            dotnet tool update --global $toolName --version $version
-            if ($LASTEXITCODE -ne 0) {
-              Write-Error "Failed to update $toolName"
-              exit $LASTEXITCODE
-            }
-          } else {
-            Write-Output "Installing $toolName version $version..."
-            dotnet tool install --global $toolName --version $version
-            if ($LASTEXITCODE -ne 0) {
-              Write-Error "Failed to install $toolName"
-              exit $LASTEXITCODE
-            }
+          Write-Output "Installing $toolName version $version globally..."
+          dotnet tool install --global $toolName --version $version
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Failed to install $toolName"
+            exit $LASTEXITCODE
           }
         }
         
-        Write-Output "All tools installed/updated successfully"
+        Write-Output "All tools installed successfully"
       working-directory: a
     
     - name: Changelog
