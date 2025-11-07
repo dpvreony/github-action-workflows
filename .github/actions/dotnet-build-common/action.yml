@@ -235,7 +235,7 @@ runs:
       shell: pwsh
       working-directory: a/src
       run: |
-        dotnet outdated -o ${{ github.workspace }}/artifacts/outdated/outdated.json
+        dotnet-outdated -o ${{ github.workspace }}/artifacts/outdated/outdated.json
     
     - name: VirusTotal Monitor Scan
       if: inputs.isPrimaryBuildOs == 'true' && inputs.virusTotalApiKey != ''
