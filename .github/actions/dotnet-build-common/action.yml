@@ -179,7 +179,7 @@ runs:
     - name: Run BinLogStats for Build
       if: always() && !cancelled() && (steps.run-build.outcome == 'success' || steps.run-build.outcome == 'failure')
       shell: pwsh
-      working-directory: github-action-workflows
+      working-directory: a
       run: |
         dotnet tool run gripe-msbuildlogstats -bl "${{ github.workspace }}/artifacts/binlog/build.binlog"
     
