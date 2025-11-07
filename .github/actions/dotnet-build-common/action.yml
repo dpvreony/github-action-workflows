@@ -107,7 +107,11 @@ runs:
         
         $installedToolsList = @()
         if ($installedToolsOutput) {
-          $installedToolsList = $installedToolsOutput -split "`n" | Select-Object -Skip 2 | Where-Object { $_.Trim() -ne "" }
+          # Use platform-agnostic line splitting
+          $lines = $installedToolsOutput -split '\r?\n'
+          # Skip header lines (first line is "Package Id...", second is dashes)
+          # and filter out empty lines
+          $installedToolsList = $lines | Select-Object -Skip 2 | Where-Object { $_.Trim() -ne "" }
         }
         
         foreach ($toolName in $json.tools.PSObject.Properties.Name) {
