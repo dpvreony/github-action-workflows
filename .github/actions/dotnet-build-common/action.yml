@@ -79,27 +79,65 @@ runs:
     - name: Install dotnet tools
       shell: pwsh
       run: |
+        $ErrorActionPreference = "Stop"
+        
         $jsonPath = "../github-action-workflows/.config/dotnet-tools.json"
-        $json = Get-Content $jsonPath -Raw | ConvertFrom-Json
+        
+        # Validate JSON file exists
+        if (-not (Test-Path $jsonPath)) {
+          Write-Error "dotnet-tools.json not found at: $jsonPath"
+          exit 1
+        }
+        
+        # Parse JSON with error handling
+        try {
+          $json = Get-Content $jsonPath -Raw | ConvertFrom-Json
+        }
+        catch {
+          Write-Error "Failed to parse dotnet-tools.json: $_"
+          exit 1
+        }
         
         # Get list of already installed tools once
-        $installedToolsList = dotnet tool list --global | Select-Object -Skip 2
+        $installedToolsOutput = dotnet tool list --global
+        $installedToolsList = @()
+        if ($installedToolsOutput) {
+          $installedToolsList = $installedToolsOutput -split "`n" | Select-Object -Skip 2 | Where-Object { $_.Trim() -ne "" }
+        }
         
         foreach ($toolName in $json.tools.PSObject.Properties.Name) {
           $tool = $json.tools.$toolName
           $version = $tool.version
-          Write-Output "Installing $toolName version $version globally..."
+          Write-Output "Processing $toolName version $version..."
           
-          # Check if tool is already installed
-          $isInstalled = $installedToolsList | Where-Object { $_ -match "^$toolName\s+" }
+          # Check if tool is already installed (escape tool name for regex)
+          $escapedToolName = [regex]::Escape($toolName)
+          $isInstalled = $installedToolsList | Where-Object { $_ -match "^$escapedToolName\s+" }
           
-          if ($isInstalled) {
-            Write-Output "$toolName is already installed, updating..."
-            dotnet tool update --global $toolName --version $version
-          } else {
-            dotnet tool install --global $toolName --version $version
+          try {
+            if ($isInstalled) {
+              Write-Output "Updating $toolName to version $version..."
+              dotnet tool update --global $toolName --version $version
+              if ($LASTEXITCODE -ne 0) {
+                Write-Error "Failed to update $toolName"
+                exit $LASTEXITCODE
+              }
+            } else {
+              Write-Output "Installing $toolName version $version..."
+              dotnet tool install --global $toolName --version $version
+              if ($LASTEXITCODE -ne 0) {
+                Write-Error "Failed to install $toolName"
+                exit $LASTEXITCODE
+              }
+            }
+          }
+          catch {
+            Write-Error "Error processing tool $toolName: $_"
+            exit 1
           }
         }
+        
+        Write-Output "All tools installed/updated successfully"
       working-directory: a
     
     - name: Changelog
