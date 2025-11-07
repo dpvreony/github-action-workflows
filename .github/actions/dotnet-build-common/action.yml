@@ -112,20 +112,20 @@ runs:
         Write-Output "All tools installed successfully"
       working-directory: a
 
-      # Add .NET global tools folder to PATH on Linux/macOS
-      - name: Add .NET global tools to PATH (Linux & macOS)
-        if: runner.os != 'Windows'
-        run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+    # Add .NET global tools folder to PATH on Linux/macOS
+    - name: Add .NET global tools to PATH (Linux & macOS)
+      if: runner.os != 'Windows'
+      run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
-      # Add .NET global tools folder to PATH on Windows
-      - name: Add .NET global tools to PATH (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          $toolsPath = "$env:USERPROFILE\.dotnet\tools"
-          Write-Output "Adding $toolsPath to GITHUB_PATH"
-          # Append the path to the special file that updates PATH for subsequent steps
-          Add-Content -Path $env:GITHUB_PATH -Value $toolsPath
+    # Add .NET global tools folder to PATH on Windows
+    - name: Add .NET global tools to PATH (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        $toolsPath = "$env:USERPROFILE\.dotnet\tools"
+        Write-Output "Adding $toolsPath to GITHUB_PATH"
+        # Append the path to the special file that updates PATH for subsequent steps
+        Add-Content -Path $env:GITHUB_PATH -Value $toolsPath
           
     - name: Changelog
       uses: glennawatson/ChangeLog@v1
