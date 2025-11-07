@@ -83,8 +83,8 @@ runs:
     - name: Copy dot-net tool config
       shell: pwsh
       run: |
-        New-Item -ItemType Directory -Force -Path ".config" | Out-Null
-        Copy-Item -Path "github-action-workflows/.config/dotnet-tools.json" -Destination ".config/dotnet-tools.json" -Force
+        New-Item -ItemType Directory -Force -Path "${{ github.workspace }}/.config" | Out-Null
+        Copy-Item -Path "${{ github.workspace }}/github-action-workflows/.config/dotnet-tools.json" -Destination "${{ github.workspace }}/.config/dotnet-tools.json" -Force
       
     - name: Install dotnet tools
       shell: pwsh
