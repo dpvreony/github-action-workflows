@@ -81,11 +81,24 @@ runs:
       run: |
         $jsonPath = "../github-action-workflows/.config/dotnet-tools.json"
         $json = Get-Content $jsonPath -Raw | ConvertFrom-Json
+        
+        # Get list of already installed tools once
+        $installedToolsList = dotnet tool list --global | Select-Object -Skip 2
+        
         foreach ($toolName in $json.tools.PSObject.Properties.Name) {
           $tool = $json.tools.$toolName
           $version = $tool.version
           Write-Output "Installing $toolName version $version globally..."
-          dotnet tool install --global $toolName --version $version
+          
+          # Check if tool is already installed
+          $isInstalled = $installedToolsList | Where-Object { $_ -match "^$toolName\s+" }
+          
+          if ($isInstalled) {
+            Write-Output "$toolName is already installed, updating..."
+            dotnet tool update --global $toolName --version $version
+          } else {
+            dotnet tool install --global $toolName --version $version
+          }
         }
       working-directory: a
     
