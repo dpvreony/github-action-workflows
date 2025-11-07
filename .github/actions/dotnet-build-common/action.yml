@@ -75,7 +75,15 @@ runs:
       with:
         setAllVars: true
         path: a
-    
+
+    # copy the dotnet tool config
+    # this is to do with how they are resolved AFTER install
+    # we can't change the current directory to "github-action-workflows" and use relative paths
+    # for some tools as things like sonar need the current dir to be the src folder
+    - name: Copy dot-net tool config
+      shell: pwsh
+      run: Copy-Item -Path "github-action-workflows/.config/dotnet-tools.json" -Destination ".config/dotnet-tools.json"
+      
     - name: Install dotnet tools
       shell: pwsh
       run: dotnet tool restore --tool-manifest ../github-action-workflows/.config/dotnet-tools.json
