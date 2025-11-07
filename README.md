@@ -91,6 +91,29 @@ When a workflow is triggered via `workflow_call` from another repository, GitHub
 - Artifact outputs remain in the runner workspace root under `artifacts/`
 - The composite action is referenced via `./github-action-workflows/.github/actions/dotnet-build-common`
 
+### .NET Tool Installation Strategy
+
+The composite action installs .NET tools globally rather than using local tool manifests. This design decision addresses path complexity issues that arise from the two-checkout pattern:
+
+**Why global installation?**
+
+When using `dotnet tool restore --tool-manifest`, the tools are installed relative to the manifest location. With two repositories checked out to different directories (`a/` and `github-action-workflows/`), this creates path resolution challenges:
+
+1. The tool manifest is located in `github-action-workflows/.config/dotnet-tools.json`
+2. The consuming repository's code is in `a/src/`
+3. Local tools installed via manifest would need complex relative path handling to be accessible from both locations
+
+**The global installation approach:**
+
+The composite action parses the `dotnet-tools.json` file directly and installs each tool globally using `dotnet tool install --global`. This ensures:
+
+- Tools are available in the system PATH regardless of the current working directory
+- No path resolution issues between the two checked-out repositories
+- Simplified tool invocation (just use the tool name, e.g., `dotnet-outdated` instead of `dotnet tool run dotnet-outdated`)
+- Consistent tool availability across all workflow steps
+- Updating of the tools remains "as-is" (i.e. Renovate)
+
+This strategy makes the workflow more maintainable and eliminates the complexity of managing tool paths across repository boundaries.
 
 ## Usage
 
