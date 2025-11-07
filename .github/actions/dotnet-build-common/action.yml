@@ -166,7 +166,7 @@ runs:
       shell: pwsh
       working-directory: a/src
       run: |
-        dotnet sonarscanner begin /k:"${{ inputs.sonarProjectKey }}" /d:sonar.login="${{ inputs.sonarToken }}" /d:sonar.host.url="https://sonarcloud.io" /o:"${{ inputs.sonarOrganisationKey }}" /d:sonar.cs.opencover.reportsPaths="${{ github.workspace }}/artifacts/unittestcoverage/coverage.xml"
+        sonarscanner begin /k:"${{ inputs.sonarProjectKey }}" /d:sonar.login="${{ inputs.sonarToken }}" /d:sonar.host.url="https://sonarcloud.io" /o:"${{ inputs.sonarOrganisationKey }}" /d:sonar.cs.opencover.reportsPaths="${{ github.workspace }}/artifacts/unittestcoverage/coverage.xml"
     
     - name: Run Build
       id: run-build
@@ -190,14 +190,14 @@ runs:
       working-directory: a/src
       run: |
         $env:GITHUB_TOKEN = "${{ inputs.githubToken }}"
-        dotnet sonarscanner end /d:sonar.login="${{ inputs.sonarToken }}"
+        sonarscanner end /d:sonar.login="${{ inputs.sonarToken }}"
     
     - name: Run BinLogStats for Build
       if: always() && !cancelled() && (steps.run-build.outcome == 'success' || steps.run-build.outcome == 'failure')
       shell: pwsh
       working-directory: a
       run: |
-        dotnet tool run gripe-msbuildlogstats -bl "${{ github.workspace }}/artifacts/binlog/build.binlog"
+        gripe-msbuildlogstats -bl "${{ github.workspace }}/artifacts/binlog/build.binlog"
     
     - name: Report Unit Test Coverage
       shell: pwsh
@@ -244,7 +244,7 @@ runs:
       shell: pwsh
       working-directory: a
       run: |
-        dotnet sbom-tool generate -b ${{ github.workspace }}/artifacts/nuget -bc src -pn ${{ inputs.solutionName }} -pv ${{ steps.nbgv.outputs.SimpleVersion }} -ps "DHGMS Solutions" -nsb https://sbom.dhgms.com -m ${{ github.workspace }}/artifacts/sbom
+        sbom-tool generate -b ${{ github.workspace }}/artifacts/nuget -bc src -pn ${{ inputs.solutionName }} -pv ${{ steps.nbgv.outputs.SimpleVersion }} -ps "DHGMS Solutions" -nsb https://sbom.dhgms.com -m ${{ github.workspace }}/artifacts/sbom
     
     - name: List outdated packages
       if: inputs.isPrimaryBuildOs == 'true'
