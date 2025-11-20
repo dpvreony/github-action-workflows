@@ -69,7 +69,7 @@ jobs:
     if: github.event_name == 'pull_request'
     steps:
       - name: 'Checkout Repository'
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: 'Dependency Review'
         uses: actions/dependency-review-action@v4
         with:
@@ -78,7 +78,7 @@ jobs:
   validate-renovate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: dpvreony/github-action-renovate-config-validator@63c5f53df823879a6cd46a10d27fbe1d4ede7839
 
   omd-generation:
@@ -198,7 +198,7 @@ jobs:
       release_required: ${{ steps.check.outputs.release_required }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
       
