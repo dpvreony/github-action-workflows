@@ -6,6 +6,11 @@ on:
       solutionName:
         required: true
         type: string
+      useSlnx:
+        required: false
+        type: boolean
+        default: false
+        description: 'If true, uses .slnx solution format instead of .sln'
       isPrimaryBuildOs:
         required: false
         type: boolean
@@ -41,7 +46,7 @@ jobs:
       DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
       DOTNET_NOLOGO: true
       DOTNET_GENERATE_ASPNET_CERTIFICATE: false
-      solutionpath: ${{ inputs.solutionName }}.sln
+      solutionpath: ${{ inputs.solutionName }}.${{ inputs.useSlnx && 'slnx' || 'sln' }}
       unittestprojectpath: ${{ inputs.solutionName }}.UnitTests/${{ inputs.solutionName }}.UnitTests.csproj
       inttestprojectpath: ${{ inputs.solutionName }}.IntegrationTests/${{ inputs.solutionName }}.IntegrationTests.csproj
       benchmarkprojectpath: ${{ inputs.solutionName }}.Benchmarks/${{ inputs.solutionName }}.Benchmarks.csproj
@@ -65,6 +70,7 @@ jobs:
         uses: ./github-action-workflows/.github/actions/dotnet-build-common
         with:
           solutionName: ${{ inputs.solutionName }}
+          useSlnx: ${{ inputs.useSlnx }}
           isPrimaryBuildOs: ${{ inputs.isPrimaryBuildOs }}
           osName: linux
           codecovToken: ${{ secrets.CODECOV_TOKEN }}

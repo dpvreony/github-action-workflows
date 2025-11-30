@@ -7,6 +7,11 @@ on:
       solutionName:
         required: true
         type: string
+      useSlnx:
+        required: false
+        type: boolean
+        default: false
+        description: 'If true, uses .slnx solution format instead of .sln'
 
 jobs:
   nuget-depr-package-run:
@@ -16,7 +21,7 @@ jobs:
       DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
       DOTNET_NOLOGO: true
       DOTNET_GENERATE_ASPNET_CERTIFICATE: false
-      solutionpath: ${{ inputs.solutionName }}.sln
+      solutionpath: ${{ inputs.solutionName }}.${{ inputs.useSlnx && 'slnx' || 'sln' }}
     steps:
     - name: Checkout code
       uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6

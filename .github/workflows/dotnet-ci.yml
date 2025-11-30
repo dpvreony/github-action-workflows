@@ -7,6 +7,11 @@ on:
         required: true
         type: string
         description: 'Name of the solution file WITHOUT the extension. On top of running the build. It is ued to calculate the format of the unit tests, benchmarks and integration tests.'
+      useSlnx:
+        required: false
+        type: boolean
+        default: false
+        description: 'If true, uses .slnx solution format instead of .sln'
       buildOs:
         required: false
         type: string
@@ -40,6 +45,7 @@ jobs:
     uses: ./.github/workflows/_wfc_dotnet-ci-build.yml
     with:
       solutionName: ${{ inputs.solutionName }}
+      useSlnx: ${{ inputs.useSlnx }}
       buildOs: ${{ inputs.buildOs }}
       requiresMacOS: ${{ inputs.requiresMacOS }}
     secrets:
@@ -53,11 +59,13 @@ jobs:
     uses: ./.github/workflows/_wfc_dotnet-ci-licenses.yml
     with:
       solutionName: ${{ inputs.solutionName }}
+      useSlnx: ${{ inputs.useSlnx }}
 
   snitch:
     uses: ./.github/workflows/_wfc_dotnet-ci-snitch.yml
     with:
       solutionName: ${{ inputs.solutionName }}
+      useSlnx: ${{ inputs.useSlnx }}
 
   appinspector:
     uses: ./.github/workflows/_wfc_dotnet-ci-appinspector.yml
@@ -90,11 +98,13 @@ jobs:
     uses: ./.github/workflows/_wfc_dotnet-ci-vulnerable-nuget-packages.yml
     with:
       solutionName: ${{ inputs.solutionName }}
+      useSlnx: ${{ inputs.useSlnx }}
 
   deprecated-nuget-packages:
     uses: ./.github/workflows/_wfc_dotnet-ci-deprecated-nuget-packages.yml
     with:
       solutionName: ${{ inputs.solutionName }}
+      useSlnx: ${{ inputs.useSlnx }}
 
   check-codeql-enabled:
     uses: ./.github/workflows/_wfc_dotnet-ci-check-codeql-enabled.yml
