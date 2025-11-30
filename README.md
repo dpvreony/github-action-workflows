@@ -6,11 +6,27 @@ This repository contains a reusable GitHub Actions workflow for building, analyz
 
 - **Main Workflow:** `.github/workflows/dotnet-ci.yml`
   - Trigger: `workflow_call`
-  - Inputs:
-    - `solutionName` (required) — Name of the solution file **without** extension.
-    - `buildOs` (optional) — Primary OS for build and pack. Options: `linux` (default), `windows`.
-    - `requiresMacOS` (optional) — If `true`, also builds and tests on macOS (never releases from macOS). Default: `false`.
-  - Secrets: Supports optional secrets for NuGet, SonarCloud, VirusTotal, Codecov, etc.
+
+### Inputs
+
+| Input | Required | Type | Default | Description |
+|-------|----------|------|---------|-------------|
+| `solutionName` | **Yes** | `string` | — | Name of the solution file **without** the extension (e.g., `MySolution` not `MySolution.sln`). This value is also used to derive the paths for unit tests (`{solutionName}.UnitTests`), integration tests (`{solutionName}.IntegrationTests`), and benchmarks (`{solutionName}.Benchmarks`). |
+| `useSlnx` | No | `boolean` | `false` | When set to `true`, uses the new `.slnx` XML-based solution format instead of the traditional `.sln` format. The `.slnx` format is a simplified, XML-based solution file format introduced in .NET 9. |
+| `buildOs` | No | `string` | `linux` | Specifies the primary operating system for building, packing, and generating release artifacts. Valid values: `linux` or `windows`. The primary OS is responsible for creating NuGet packages, SBOM, and other release artifacts. |
+| `requiresMacOS` | No | `boolean` | `false` | When set to `true`, enables additional build and test execution on macOS. Note: macOS builds are for validation only and never generate release artifacts. Useful for ensuring cross-platform compatibility. |
+
+### Secrets
+
+| Secret | Required | Description |
+|--------|----------|-------------|
+| `NUGET_USER` | No | Your NuGet.org profile/username (NOT your email address) for Trusted Publishers authentication via OIDC. When configured, enables secure NuGet package publishing without storing long-lived API keys. You must first configure your repository as a Trusted Publisher on NuGet.org. |
+| `NUGET_API_KEY` | No | Traditional NuGet.org API key for package publishing. Used as a fallback when Trusted Publishers (OIDC) is not configured. Less secure than OIDC as it requires storing a long-lived secret. |
+| `SONAR_TOKEN` | No | Authentication token for SonarCloud code analysis. Required for SonarCloud integration. Obtain from your SonarCloud account settings. |
+| `SONAR_PROJECT_KEY` | No | The unique project key for your SonarCloud project. Found in your SonarCloud project settings. Required along with `SONAR_TOKEN` and `SONAR_ORGANISATION_KEY` for SonarCloud analysis. |
+| `SONAR_ORGANISATION_KEY` | No | Your SonarCloud organization key. Found in your SonarCloud organization settings. Required along with `SONAR_TOKEN` and `SONAR_PROJECT_KEY` for SonarCloud analysis. |
+| `VIRUSTOTAL_API_KEY` | No | API key for VirusTotal scanning of NuGet packages. When configured, uploads packages to VirusTotal for malware scanning before release. Obtain from your VirusTotal account. |
+| `CODECOV_TOKEN` | No | Upload token for Codecov code coverage reporting. When configured, uploads test coverage reports to Codecov for tracking and visualization. Obtain from your Codecov project settings. |
 
 ## Multi-OS Build Support
 
@@ -120,11 +136,12 @@ This strategy makes the workflow more maintainable and eliminates the complexity
 To use this workflow in your repository:
 
 1. Reference this workflow via `workflow_call` in your own GitHub Actions workflow.
-2. Pass the required `solutionName` input (without the `.sln` extension).
-3. Optionally provide secrets for NuGet, SonarCloud, etc.
-4. Ensure the required sub-workflow files exist in `.github/workflows/`.
+2. Pass the required `solutionName` input (without the `.sln` or `.slnx` extension).
+3. Optionally configure `useSlnx: true` if using the new `.slnx` solution format.
+4. Optionally provide secrets for NuGet, SonarCloud, etc.
+5. Ensure the required sub-workflow files exist in `.github/workflows/`.
 
-Example workflow dispatch:
+### Basic Example
 
 ```yaml
 jobs:
@@ -132,14 +149,27 @@ jobs:
     uses: dpvreony/github-action-workflows/.github/workflows/dotnet-ci.yml@main
     with:
       solutionName: MySolution
-      # Optional: specify Windows as the primary build OS
-      # buildOs: windows
-      # Optional: enable macOS builds and tests
-      # requiresMacOS: true
     secrets:
-      # For Trusted Publishers (OIDC) - Required for NuGet publishing
       NUGET_USER: ${{ secrets.NUGET_USER }}
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
+      SONAR_ORGANISATION_KEY: ${{ secrets.SONAR_ORGANISATION_KEY }}
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+```
+
+### Using .slnx Solution Format
+
+For projects using the new XML-based `.slnx` solution format (introduced in .NET 9):
+
+```yaml
+jobs:
+  ci:
+    uses: dpvreony/github-action-workflows/.github/workflows/dotnet-ci.yml@main
+    with:
+      solutionName: MySolution
+      useSlnx: true  # Uses MySolution.slnx instead of MySolution.sln
+    secrets:
+      NUGET_USER: ${{ secrets.NUGET_USER }}
 ```
 
 ### Multi-OS Usage Examples
@@ -174,6 +204,38 @@ with:
   solutionName: MySolution
   buildOs: windows
   requiresMacOS: true
+```
+
+**Using .slnx with Windows build:**
+```yaml
+uses: dpvreony/github-action-workflows/.github/workflows/dotnet-ci.yml@main
+with:
+  solutionName: MySolution
+  useSlnx: true
+  buildOs: windows
+```
+
+### Full Configuration Example
+
+This example shows all available inputs and secrets:
+
+```yaml
+jobs:
+  ci:
+    uses: dpvreony/github-action-workflows/.github/workflows/dotnet-ci.yml@main
+    with:
+      solutionName: MySolution          # Required: solution name without extension
+      useSlnx: false                    # Optional: use .slnx format (default: false)
+      buildOs: linux                    # Optional: primary build OS (default: linux)
+      requiresMacOS: false              # Optional: enable macOS builds (default: false)
+    secrets:
+      NUGET_USER: ${{ secrets.NUGET_USER }}                       # For Trusted Publishers (OIDC)
+      NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}                 # Fallback API key
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}                     # SonarCloud authentication
+      SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}         # SonarCloud project key
+      SONAR_ORGANISATION_KEY: ${{ secrets.SONAR_ORGANISATION_KEY }} # SonarCloud org key
+      VIRUSTOTAL_API_KEY: ${{ secrets.VIRUSTOTAL_API_KEY }}       # VirusTotal scanning
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}                 # Code coverage upload
 ```
 
 ## NuGet Publishing
