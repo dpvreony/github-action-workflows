@@ -198,7 +198,11 @@ jobs:
       - check-nuget-user-populated
       - check-nuget-api-key-populated
       - check-nuget-trusted-publisher-valid
-    if: needs.check-nuget-user-populated.outputs.has_nuget_user == 'true' || needs.check-nuget-api-key-populated.outputs.has_api_key == 'true'
+    if: |
+      always() &&
+      !cancelled() &&
+      !failure() &&
+      (needs.check-nuget-user-populated.outputs.has_nuget_user == 'true' || needs.check-nuget-api-key-populated.outputs.has_api_key == 'true')
     steps:
       - name: Check if 'nuget' environment exists and has protection rules
         uses: dpvreony/ensure-environment-protected@main
