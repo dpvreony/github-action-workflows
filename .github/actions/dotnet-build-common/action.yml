@@ -172,7 +172,7 @@ runs:
       shell: pwsh
       working-directory: a/src
       run: |
-        dotnet test --project ${{ inputs.solutionName }}.UnitTests/${{ inputs.solutionName }}.UnitTests.csproj --verbosity normal --configuration Release --no-build /bl:${{ github.workspace }}/artifacts/binlog/unittest.binlog --nologo --logger GitHubActions -- --coverage --coverage-output-format cobertura --coverage-output coverage.xml --long-running 10 --results-directory ${{ github.workspace }}/artifacts/unittestcoverage
+        dotnet test --project ${{ inputs.solutionName }}.UnitTests/${{ inputs.solutionName }}.UnitTests.csproj --verbosity normal --configuration Release --no-build /bl:${{ github.workspace }}/artifacts/binlog/unittest.binlog -- --coverage --coverage-output-format cobertura --coverage-output coverage.xml --long-running 10 --results-directory ${{ github.workspace }}/artifacts/unittestcoverage
     
     - name: Run Sonar Scanner end
       if: inputs.isPrimaryBuildOs == 'true' && inputs.sonarToken != '' && inputs.sonarProjectKey != '' && inputs.sonarOrganisationKey != ''
@@ -205,7 +205,7 @@ runs:
       shell: pwsh
       working-directory: a/src
       run: |
-        dotnet test --project ${{ inputs.solutionName }}.IntegrationTests/${{ inputs.solutionName }}.IntegrationTests.csproj --configuration Release --no-build --nologo /bl:../artifacts/binlog/inttest.binlog --logger "GitHubActions;verbosity=normal" -- --coverage --coverage-output-format cobertura --coverage-output coverage.xml --long-running 10 --results-directory ${{ github.workspace }}/artifacts/inttestcoverage
+        dotnet test --project ${{ inputs.solutionName }}.IntegrationTests/${{ inputs.solutionName }}.IntegrationTests.csproj --configuration Release --no-build /bl:../artifacts/binlog/inttest.binlog -- --coverage --coverage-output-format cobertura --coverage-output coverage.xml --long-running 10 --results-directory ${{ github.workspace }}/artifacts/inttestcoverage
     
     - name: Report Integration Test Coverage
       shell: pwsh
