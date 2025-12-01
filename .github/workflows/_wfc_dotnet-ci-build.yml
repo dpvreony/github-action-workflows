@@ -21,6 +21,11 @@ on:
         type: boolean
         default: false
         description: 'If true, also builds and tests on macOS (never releases from macOS)'
+      runIntTestsOnPrimaryOsOnly:
+        required: false
+        type: boolean
+        default: false
+        description: 'If true, integration tests will only run on the primary build OS'
     secrets:
       SONAR_TOKEN:
         required: false
@@ -58,6 +63,7 @@ jobs:
       solutionName: ${{ inputs.solutionName }}
       useSlnx: ${{ inputs.useSlnx }}
       isPrimaryBuildOs: ${{ inputs.buildOs == 'linux' }}
+      runIntTests: ${{ !inputs.runIntTestsOnPrimaryOsOnly || inputs.buildOs == 'linux' }}
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
@@ -73,6 +79,7 @@ jobs:
       solutionName: ${{ inputs.solutionName }}
       useSlnx: ${{ inputs.useSlnx }}
       isPrimaryBuildOs: true
+      runIntTests: ${{ !inputs.runIntTestsOnPrimaryOsOnly || inputs.buildOs == 'windows' }}
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
@@ -87,5 +94,6 @@ jobs:
     with:
       solutionName: ${{ inputs.solutionName }}
       useSlnx: ${{ inputs.useSlnx }}
+      runIntTests: ${{ !inputs.runIntTestsOnPrimaryOsOnly }}
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

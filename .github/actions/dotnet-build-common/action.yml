@@ -11,6 +11,10 @@ inputs:
   isPrimaryBuildOs:
     description: 'If true, this OS will upload release artifacts'
     required: true
+  runIntTests:
+    description: 'If true, integration tests will be run'
+    required: false
+    default: 'true'
   osName:
     description: 'OS name for artifact naming (e.g., linux, windows, macos)'
     required: true
@@ -202,12 +206,14 @@ runs:
         }
     
     - name: Run Integration Tests
+      if: inputs.runIntTests == 'true'
       shell: pwsh
       working-directory: a/src
       run: |
         dotnet test --project ${{ inputs.solutionName }}.IntegrationTests/${{ inputs.solutionName }}.IntegrationTests.csproj --configuration Release --no-build /bl:../artifacts/binlog/inttest.binlog -- --coverage --coverage-output-format cobertura --coverage-output coverage.xml --long-running 10 --results-directory ${{ github.workspace }}/artifacts/inttestcoverage
     
     - name: Report Integration Test Coverage
+      if: inputs.runIntTests == 'true'
       shell: pwsh
       run: |
         $opencoverxmlpath = Get-ChildItem 'artifacts/inttestcoverage/coverage.xml' -ErrorAction SilentlyContinue | Select-Object -First 1
@@ -287,7 +293,7 @@ runs:
         if-no-files-found: error
     
     - name: store integration test coverage
-      if: inputs.isPrimaryBuildOs == 'true'
+      if: inputs.isPrimaryBuildOs == 'true' && inputs.runIntTests == 'true'
       uses: actions/upload-artifact@v5
       with:
         name: inttestcoverage

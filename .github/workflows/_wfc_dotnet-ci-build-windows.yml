@@ -16,6 +16,11 @@ on:
         type: boolean
         default: false
         description: 'If true, this OS will upload release artifacts (nuget packages, SBOM, etc.)'
+      runIntTests:
+        required: false
+        type: boolean
+        default: true
+        description: 'If true, integration tests will be run'
     secrets:
       SONAR_TOKEN:
         required: false
@@ -83,6 +88,7 @@ jobs:
           solutionName: ${{ inputs.solutionName }}
           useSlnx: ${{ inputs.useSlnx }}
           isPrimaryBuildOs: ${{ inputs.isPrimaryBuildOs }}
+          runIntTests: ${{ inputs.runIntTests }}
           osName: windows
           codecovToken: ${{ secrets.CODECOV_TOKEN }}
           sonarToken: ${{ secrets.SONAR_TOKEN }}

@@ -11,6 +11,11 @@ on:
         type: boolean
         default: false
         description: 'If true, uses .slnx solution format instead of .sln'
+      runIntTests:
+        required: false
+        type: boolean
+        default: true
+        description: 'If true, integration tests will be run'
     secrets:
       CODECOV_TOKEN:
         required: false
@@ -48,5 +53,6 @@ jobs:
           solutionName: ${{ inputs.solutionName }}
           useSlnx: ${{ inputs.useSlnx }}
           isPrimaryBuildOs: false
+          runIntTests: ${{ inputs.runIntTests }}
           osName: macos
           codecovToken: ${{ secrets.CODECOV_TOKEN }}

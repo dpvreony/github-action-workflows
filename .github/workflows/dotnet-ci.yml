@@ -22,6 +22,11 @@ on:
         type: boolean
         default: false
         description: 'If true, also builds and tests on macOS (never releases from macOS)'
+      runIntTestsOnPrimaryOsOnly:
+        required: false
+        type: boolean
+        default: false
+        description: 'If true, integration tests will only run on the primary build OS. Useful when integration tests only support a specific runtime (e.g., WPF on Windows).'
     secrets:
       NUGET_API_KEY:
         required: false
@@ -48,6 +53,7 @@ jobs:
       useSlnx: ${{ inputs.useSlnx }}
       buildOs: ${{ inputs.buildOs }}
       requiresMacOS: ${{ inputs.requiresMacOS }}
+      runIntTestsOnPrimaryOsOnly: ${{ inputs.runIntTestsOnPrimaryOsOnly }}
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
