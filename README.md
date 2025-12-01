@@ -15,6 +15,7 @@ This repository contains a reusable GitHub Actions workflow for building, analyz
 | `useSlnx` | No | `boolean` | `false` | When set to `true`, uses the new `.slnx` XML-based solution format instead of the traditional `.sln` format. The `.slnx` format is a simplified, XML-based solution file format introduced in .NET 9. |
 | `buildOs` | No | `string` | `linux` | Specifies the primary operating system for building, packing, and generating release artifacts. Valid values: `linux` or `windows`. The primary OS is responsible for creating NuGet packages, SBOM, and other release artifacts. |
 | `requiresMacOS` | No | `boolean` | `false` | When set to `true`, enables additional build and test execution on macOS. Note: macOS builds are for validation only and never generate release artifacts. Useful for ensuring cross-platform compatibility. |
+| `runIntTestsOnPrimaryOsOnly` | No | `boolean` | `false` | When set to `true`, integration tests will only run on the primary build OS (specified by `buildOs`). Useful when integration tests only support a specific runtime, such as WPF binaries that only work on Windows. |
 
 ### Secrets
 
@@ -206,6 +207,15 @@ with:
   requiresMacOS: true
 ```
 
+**Windows-only integration tests (e.g., WPF projects):**
+```yaml
+uses: dpvreony/github-action-workflows/.github/workflows/dotnet-ci.yml@main
+with:
+  solutionName: MySolution
+  buildOs: windows
+  runIntTestsOnPrimaryOsOnly: true  # Integration tests only run on Windows
+```
+
 **Using .slnx with Windows build:**
 ```yaml
 uses: dpvreony/github-action-workflows/.github/workflows/dotnet-ci.yml@main
@@ -228,6 +238,7 @@ jobs:
       useSlnx: false                    # Optional: use .slnx format (default: false)
       buildOs: linux                    # Optional: primary build OS (default: linux)
       requiresMacOS: false              # Optional: enable macOS builds (default: false)
+      runIntTestsOnPrimaryOsOnly: false # Optional: run int tests only on primary OS (default: false)
     secrets:
       NUGET_USER: ${{ secrets.NUGET_USER }}                       # For Trusted Publishers (OIDC)
       NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}                 # Fallback API key
