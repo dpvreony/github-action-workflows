@@ -295,7 +295,7 @@ jobs:
           echo ""
           echo "## Release Job Condition Evaluation"
           echo "Combined condition ('refs/heads/main' == github.ref AND release_required == 'true'):"
-          if [ "refs/heads/main" = "${{ github.ref }}" ] && [ "${{ needs.check-release-required.outputs.release_required }}" = "true" ]; then
+          if [ "refs/heads/main" == "${{ github.ref }}" ] && [ "${{ needs.check-release-required.outputs.release_required }}" == "true" ]; then
             echo "✅ WILL RUN: Release job will execute"
           else
             echo "❌ WILL SKIP: Release job will be skipped"
