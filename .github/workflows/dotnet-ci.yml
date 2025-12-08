@@ -253,7 +253,10 @@ jobs:
             
             # Get diff between current commit and latest release tag
             # Check if there are changes in src/ excluding *.*Tests folders
-            changed_files=$(git diff --name-only "$latest_release" HEAD -- src/ | grep -v '.*\..*Tests/' || true)
+            changed_files=$(git diff --name-only "$latest_release" HEAD -- src/ \
+              | grep -v '.*\..*Tests/' \
+              | grep -v '.*\..*Benchmarks/' \
+              | grep -v '.*\..*Testing/' || true)
             
             if [ -n "$changed_files" ]; then
               echo "Changes detected in non-test files:"
