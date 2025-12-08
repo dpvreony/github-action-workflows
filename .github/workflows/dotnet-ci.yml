@@ -277,16 +277,21 @@ jobs:
     steps:
       - name: Display Release Decision Variables
         run: |
+          # Define constants
+          EXPECTED_REF="refs/heads/main"
+          CURRENT_REF="${{ github.ref }}"
+          RELEASE_REQUIRED="${{ needs.check-release-required.outputs.release_required }}"
+          
           echo "=== Release Decision Troubleshooting ==="
           echo ""
           echo "## Branch and Commit Information"
-          echo "github.ref: ${{ github.ref }}"
+          echo "github.ref: $CURRENT_REF"
           echo "github.sha: ${{ github.sha }}"
-          echo "Expected ref for release: refs/heads/main"
+          echo "Expected ref for release: $EXPECTED_REF"
           echo "Branch matches main (using release job's condition order): ${{ 'refs/heads/main' == github.ref }}"
           echo ""
           echo "## Release Required Check"
-          echo "release_required: ${{ needs.check-release-required.outputs.release_required }}"
+          echo "release_required: $RELEASE_REQUIRED"
           echo ""
           echo "## Build Outputs"
           echo "nbgv version: ${{ needs.build.outputs.nbgv }}"
@@ -297,17 +302,17 @@ jobs:
           echo ""
           echo "## Release Job Condition Evaluation"
           echo "Combined condition ('refs/heads/main' == github.ref AND release_required == 'true'):"
-          if [ "refs/heads/main" == "${{ github.ref }}" ] && [ "${{ needs.check-release-required.outputs.release_required }}" == "true" ]; then
+          if [ "$EXPECTED_REF" == "$CURRENT_REF" ] && [ "$RELEASE_REQUIRED" == "true" ]; then
             echo "✅ WILL RUN: Release job will execute"
           else
             echo "❌ WILL SKIP: Release job will be skipped"
             echo ""
             echo "Reasons:"
-            if [ "refs/heads/main" != "${{ github.ref }}" ]; then
-              echo "  - Not on main branch (current: ${{ github.ref }})"
+            if [ "$EXPECTED_REF" != "$CURRENT_REF" ]; then
+              echo "  - Not on main branch (current: $CURRENT_REF)"
             fi
-            if [ "${{ needs.check-release-required.outputs.release_required }}" != "true" ]; then
-              echo "  - Release not required (release_required: ${{ needs.check-release-required.outputs.release_required }})"
+            if [ "$RELEASE_REQUIRED" != "true" ]; then
+              echo "  - Release not required (release_required: $RELEASE_REQUIRED)"
             fi
           fi
           echo ""
