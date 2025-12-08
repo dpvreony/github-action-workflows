@@ -281,6 +281,7 @@ jobs:
           EXPECTED_REF="refs/heads/main"
           CURRENT_REF="${{ github.ref }}"
           RELEASE_REQUIRED="${{ needs.check-release-required.outputs.release_required }}"
+          CHANGE_COMMIT_LOG="${{ needs.build.outputs.change_commit_log }}"
           
           echo "=== Release Decision Troubleshooting ==="
           echo ""
@@ -295,7 +296,7 @@ jobs:
           echo ""
           echo "## Build Outputs"
           echo "nbgv version: ${{ needs.build.outputs.nbgv }}"
-          echo "change_commit_log length: ${{ length(needs.build.outputs.change_commit_log) }} characters"
+          echo "change_commit_log length: ${#CHANGE_COMMIT_LOG} characters"
           echo ""
           echo "## NuGet Environment Check"
           echo "check-nuget-environment job result: ${{ needs.check-nuget-environment.result }}"
