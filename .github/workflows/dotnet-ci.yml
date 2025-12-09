@@ -275,7 +275,7 @@ jobs:
     permissions:
       contents: read
     outputs:
-      run_release: ${{ steps.set-output.outputs.run_release }}
+      run_release: ${{ steps.evaluate-release-condition.outputs.run_release }}
     steps:
       - name: Display Release Decision Variables
         run: |
@@ -322,7 +322,7 @@ jobs:
           echo "=== End of Release Decision Troubleshooting ==="
       
       - name: Set release output
-        id: set-output
+        id: evaluate-release-condition
         run: |
           # Evaluate the release condition
           EXPECTED_REF="refs/heads/main"
