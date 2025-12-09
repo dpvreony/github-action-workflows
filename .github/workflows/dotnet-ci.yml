@@ -338,7 +338,7 @@ jobs:
           fi
 
   release:
-    if: ${{ needs.debug-release-values.outputs.run_release == 'true' }}
+    if: always() && ${{ needs.debug-release-values.outputs.run_release == 'true' }}
     permissions:
       contents: write
       pages: write
