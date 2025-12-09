@@ -345,7 +345,7 @@ jobs:
       id-token: write
       actions: write
     runs-on: ubuntu-latest
-    needs: [build, check-nuget-environment, check-release-required, debug-release-values]
+    needs: [build, check-nuget-environment, check-release-required, debug-release-values, check-nuget-user-populated]
     environment:
       name: nuget
     env:
