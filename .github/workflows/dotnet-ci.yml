@@ -445,7 +445,9 @@ jobs:
       working-directory: nuget
       run: |
         echo "::notice::Using Trusted Publishers (OIDC) for NuGet push..."
-        dotnet nuget push -s "$SOURCE_URL" -k "$NUGET_API_KEY" -- *.nupkg
+        for package in *.nupkg; do
+          dotnet nuget push -s "$SOURCE_URL" -k "$NUGET_API_KEY" "$package"
+        done
 
     - name: NuGet Push (API_KEY)
       env:
@@ -454,4 +456,6 @@ jobs:
       if: needs.check-nuget-api-key-populated.outputs.has_api_key == 'true'
       working-directory: nuget
       run: |
-        dotnet nuget push -s "$SOURCE_URL" -k "$NUGET_AUTH_TOKEN" -- *.nupkg
+        for package in *.nupkg; do
+          dotnet nuget push -s "$SOURCE_URL" -k "$NUGET_AUTH_TOKEN" "$package"
+        done
