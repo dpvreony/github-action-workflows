@@ -417,7 +417,7 @@ jobs:
         echo "Finished canceling old pending releases"
     
     - name: Download NuGet Packages
-      uses: actions/download-artifact@v6
+      uses: actions/download-artifact@v7
       with:
         name: nuget
     - name: Create Release
