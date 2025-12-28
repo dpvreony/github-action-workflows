@@ -420,6 +420,7 @@ jobs:
       uses: actions/download-artifact@v7
       with:
         name: nuget
+        path: ${{ github.workspace }}/nuget
     - name: Create Release
       uses: actions/create-release@v1
       env:
