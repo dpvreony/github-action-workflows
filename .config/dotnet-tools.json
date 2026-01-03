@@ -60,7 +60,7 @@
     },
     "gripe-msbuildlogstats":
     {
-      "version": "2.0.15",
+      "version": "2.0.21",
       "commands": [
         "gripe-msbuildlogstats"
       ],
