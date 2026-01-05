@@ -73,6 +73,11 @@ jobs:
       solutionName: ${{ inputs.solutionName }}
       useSlnx: ${{ inputs.useSlnx }}
 
+  osv-scan:
+    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@v2.3.1"
+    permissions:
+      security-events: write
+      
   appinspector:
     uses: ./.github/workflows/_wfc_dotnet-ci-appinspector.yml
     with:
