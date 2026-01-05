@@ -205,7 +205,7 @@ jobs:
       (needs.check-nuget-user-populated.outputs.has_nuget_user == 'true' || needs.check-nuget-api-key-populated.outputs.has_api_key == 'true')
     steps:
       - name: Check if 'nuget' environment exists and has protection rules
-        uses: dpvreony/ensure-environment-protected@main
+        uses: dpvreony/ensure-environment-protected@1.0.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           environment_name: 'nuget'
