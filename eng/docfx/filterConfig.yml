@@ -1,0 +1,17 @@
+apiRules:
+  # Exclude assemblies
+  - exclude:
+      uidRegex: .*\.Benchmarks$
+      type: Assembly
+
+  - exclude:
+      uidRegex: .*\.IntegrationTests$
+      type: Assembly
+
+  - exclude:
+      uidRegex: .*\.Testing$
+      type: Assembly
+
+  - exclude:
+      uidRegex: .*\.UnitTests$
+      type: Assembly

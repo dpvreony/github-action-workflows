@@ -1,0 +1,24 @@
+{
+  "metadata": [
+    {
+        "src": [
+            {
+                "files": [
+                    "*.sln"
+                ],
+                "exclude": [
+                    "*.Benchmarks/**",
+                    "*.IntegrationTests/**",
+                    "*.Testing/**",
+                    "*.UnitTests/**"
+                  ],
+                "src": "../../../a/src/"
+            }
+        ],
+        "filter": "filterConfig.yml",
+        "dest": "../../../artifacts/docfx/api",
+        "disableGitFeatures": false,
+        "disableDefaultFilter": false
+    }
+  ]
+}
