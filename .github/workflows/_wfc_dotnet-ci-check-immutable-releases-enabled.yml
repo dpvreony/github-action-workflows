@@ -14,7 +14,7 @@ jobs:
     outputs:
       immutable_releases_enabled: ${{ steps.check.outputs.immutable_releases_enabled }}
     permissions:
-      administration: read
+      contents: read
     steps:
       - name: Check if immutable releases are enabled
         id: check

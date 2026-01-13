@@ -123,8 +123,6 @@ jobs:
     uses: ./.github/workflows/_wfc_dotnet-ci-check-codeql-enabled.yml
 
   check-immutable-releases-enabled:
-    permissions:
-      administration: read
     uses: ./.github/workflows/_wfc_dotnet-ci-check-immutable-releases-enabled.yml
 
   codeql:
