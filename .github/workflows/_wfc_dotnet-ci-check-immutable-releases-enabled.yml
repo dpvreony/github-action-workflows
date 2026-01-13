@@ -26,29 +26,33 @@ jobs:
           
           # Use GitHub CLI to check immutable releases status
           if command -v gh &> /dev/null; then
-            # Call the immutable-releases endpoint with include flag to get HTTP status
-            # Store response in a temporary file to handle headers and body separately
+            # Create temporary file and ensure cleanup on exit
             temp_response=$(mktemp)
+            trap 'rm -f "$temp_response"' EXIT
             
-            # Make API call and capture HTTP status
-            http_status=$(gh api \
+            # Make API call and capture full response with headers
+            if ! gh api \
               -H "Accept: application/vnd.github+json" \
               -H "X-GitHub-Api-Version: 2022-11-28" \
               /repos/${{ github.repository }}/immutable-releases \
-              --include 2>&1 | tee "$temp_response" | grep -i "^HTTP" | tail -1 | awk '{print $2}')
-            
-            # Extract just the JSON body (everything after headers)
-            json_body=$(sed -n '/^{/,$p' "$temp_response")
-            
-            # Clean up temp file
-            rm -f "$temp_response"
-            
-            # Check for HTTP 200 response
-            if [ "$http_status" != "200" ]; then
-              echo "::error::Failed to query immutable releases API (HTTP $http_status)"
+              --include > "$temp_response" 2>&1; then
+              echo "::error::Failed to call immutable releases API"
               echo "immutable_releases_enabled=false" >> "$GITHUB_OUTPUT"
               exit 1
             fi
+            
+            # Extract HTTP status code (look for HTTP/x.x or HTTP/x status line)
+            http_status=$(grep -E "^HTTP/[0-9.]+ [0-9]+" "$temp_response" | tail -1 | awk '{print $2}')
+            
+            # Check for HTTP 200 response
+            if [ "$http_status" != "200" ]; then
+              echo "::error::Failed to query immutable releases API (HTTP ${http_status:-unknown})"
+              echo "immutable_releases_enabled=false" >> "$GITHUB_OUTPUT"
+              exit 1
+            fi
+            
+            # Extract JSON body (everything after blank line that separates headers from body)
+            json_body=$(awk '/^[[:space:]]*$/{flag=1; next} flag' "$temp_response")
             
             # Extract the enabled field from JSON response
             immutable_status=$(echo "$json_body" | jq -r '.enabled' 2>/dev/null || echo "unknown")
