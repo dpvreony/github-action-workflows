@@ -17,7 +17,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.0.1
       
       - name: Check if deterministic builds are enabled
         id: check
@@ -43,13 +43,13 @@ jobs:
           while IFS= read -r file; do
             if [ -f "$file" ]; then
               # Check for Deterministic property (case-insensitive, flexible whitespace)
-              if grep -Eqi '<Deterministic[[:space:]]*>[[:space:]]*true[[:space:]]*</Deterministic[[:space:]]*>' "$file"; then
+              if grep -Eqi '<Deterministic[[:space:]]*>[[:space:]]*true[[:space:]]*</Deterministic>' "$file"; then
                 echo "✓ Found Deterministic=true in: $file"
                 deterministic_found=true
               fi
               
               # Check for ContinuousIntegrationBuild property (case-insensitive, flexible whitespace)
-              if grep -Eqi '<ContinuousIntegrationBuild[[:space:]]*>[[:space:]]*true[[:space:]]*</ContinuousIntegrationBuild[[:space:]]*>' "$file"; then
+              if grep -Eqi '<ContinuousIntegrationBuild[[:space:]]*>[[:space:]]*true[[:space:]]*</ContinuousIntegrationBuild>' "$file"; then
                 echo "✓ Found ContinuousIntegrationBuild=true in: $file"
                 continuousintegrationbuild_found=true
               fi
