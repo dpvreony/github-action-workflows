@@ -21,6 +21,11 @@ on:
         type: boolean
         default: true
         description: 'If true, integration tests will be run'
+      workloads:
+        required: false
+        type: string
+        default: ''
+        description: 'Comma-separated list of .NET workloads to install'
     secrets:
       SONAR_TOKEN:
         required: false
@@ -79,6 +84,7 @@ jobs:
           isPrimaryBuildOs: ${{ inputs.isPrimaryBuildOs }}
           runIntTests: ${{ inputs.runIntTests }}
           osName: linux
+          workloads: ${{ inputs.workloads }}
           codecovToken: ${{ secrets.CODECOV_TOKEN }}
           sonarToken: ${{ secrets.SONAR_TOKEN }}
           sonarProjectKey: ${{ secrets.SONAR_PROJECT_KEY }}

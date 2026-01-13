@@ -1,0 +1,61 @@
+name: 'Install .NET Workloads'
+description: 'Installs specified .NET workloads'
+inputs:
+  workloads:
+    description: 'Comma-separated list of workloads to install (e.g., "android,aspire,maui"). Leave empty to skip workload installation.'
+    required: false
+    default: ''
+runs:
+  using: 'composite'
+  steps:
+    - name: Install DotNet workloads
+      shell: pwsh
+      run: |
+        $workloadsInput = '${{ inputs.workloads }}'
+        
+        if ([string]::IsNullOrWhiteSpace($workloadsInput)) {
+          Write-Output "::notice::No workloads specified, skipping workload installation"
+          exit 0
+        }
+        
+        # Split comma-separated string and trim whitespace
+        $workloads = $workloadsInput -split ',' | ForEach-Object { $_.Trim() } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+        
+        if ($workloads.Count -eq 0) {
+          Write-Output "::notice::No valid workloads found, skipping workload installation"
+          exit 0
+        }
+        
+        # Define workloads that are not supported on Linux
+        $linuxUnsupportedWorkloads = @('ios', 'tvos', 'macos', 'maui')
+        
+        # Filter out unsupported workloads on Linux
+        if ($IsLinux) {
+          $originalCount = $workloads.Count
+          $workloads = $workloads | Where-Object { $_ -notin $linuxUnsupportedWorkloads }
+          $skippedCount = $originalCount - $workloads.Count
+          
+          if ($skippedCount -gt 0) {
+            Write-Output "::notice::Skipped $skippedCount workload(s) not supported on Linux: $($linuxUnsupportedWorkloads -join ', ')"
+          }
+          
+          if ($workloads.Count -eq 0) {
+            Write-Output "::notice::No Linux-compatible workloads to install"
+            exit 0
+          }
+        }
+        
+        Write-Output "::notice::Installing $($workloads.Count) workload(s): $($workloads -join ', ')"
+        
+        foreach ($workload in $workloads) {
+          Write-Output "Installing workload: $workload"
+          dotnet workload install $workload
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Failed to install workload: $workload"
+            exit $LASTEXITCODE
+          }
+        }
+        
+        Write-Output "::notice::All workloads installed successfully"
+        Write-Output "Listing installed workloads:"
+        dotnet workload list

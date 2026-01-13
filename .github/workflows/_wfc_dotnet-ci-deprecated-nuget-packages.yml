@@ -12,6 +12,11 @@ on:
         type: boolean
         default: false
         description: 'If true, uses .slnx solution format instead of .sln'
+      workloads:
+        required: false
+        type: string
+        default: ''
+        description: 'Comma-separated list of .NET workloads to install'
 
 jobs:
   nuget-depr-package-run:
@@ -38,6 +43,11 @@ jobs:
       uses: actions/setup-dotnet@v5
       with:
         global-json-file: "a/global.json"
+
+    - name: Install DotNet workloads
+      uses: ./github-action-workflows/.github/actions/dotnet-install-workloads
+      with:
+        workloads: ${{ inputs.workloads }}
 
     - name: Prepare Artifact Directory
       run: |
