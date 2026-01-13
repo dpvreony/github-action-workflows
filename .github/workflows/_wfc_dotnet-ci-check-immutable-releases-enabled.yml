@@ -37,6 +37,13 @@ jobs:
               /repos/${{ github.repository }}/immutable-releases \
               --include > "$temp_response" 2>&1; then
               echo "::error::Failed to call immutable releases API"
+              # Show the error details from the API response
+              if [ -s "$temp_response" ]; then
+                echo "::error::API Error Details:"
+                cat "$temp_response" | while IFS= read -r line; do
+                  echo "::error::  $line"
+                done
+              fi
               echo "immutable_releases_enabled=false" >> "$GITHUB_OUTPUT"
               exit 1
             fi
@@ -47,6 +54,11 @@ jobs:
             # Check for HTTP 200 response
             if [ "$http_status" != "200" ]; then
               echo "::error::Failed to query immutable releases API (HTTP ${http_status:-unknown})"
+              # Show response body for debugging
+              json_body=$(awk '/^[[:space:]]*$/{flag=1; next} flag' "$temp_response")
+              if [ -n "$json_body" ]; then
+                echo "::error::Response body: $json_body"
+              fi
               echo "immutable_releases_enabled=false" >> "$GITHUB_OUTPUT"
               exit 1
             fi
