@@ -124,7 +124,7 @@ jobs:
 
   check-immutable-releases-enabled:
     permissions:
-      contents: read
+      administration: read
     uses: ./.github/workflows/_wfc_dotnet-ci-check-immutable-releases-enabled.yml
 
   codeql:
