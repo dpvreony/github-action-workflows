@@ -16,6 +16,11 @@ on:
         type: boolean
         default: true
         description: 'If true, integration tests will be run'
+      workloads:
+        required: false
+        type: string
+        default: ''
+        description: 'Comma-separated list of .NET workloads to install'
     secrets:
       CODECOV_TOKEN:
         required: false
@@ -55,4 +60,5 @@ jobs:
           isPrimaryBuildOs: false
           runIntTests: ${{ inputs.runIntTests }}
           osName: macos
+          workloads: ${{ inputs.workloads }}
           codecovToken: ${{ secrets.CODECOV_TOKEN }}

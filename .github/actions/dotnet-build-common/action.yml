@@ -36,6 +36,10 @@ inputs:
   virusTotalApiKey:
     description: 'VirusTotal API key'
     required: false
+  workloads:
+    description: 'Comma-separated list of .NET workloads to install'
+    required: false
+    default: ''
 outputs:
   nbgvVersion:
     description: 'NBGV SemVer2 version'
@@ -58,18 +62,9 @@ runs:
         global-json-file: "a/global.json"
     
     - name: Install DotNet workloads
-      shell: pwsh
-      run: |
-        if ($IsWindows) {
-          dotnet workload install android aspire ios tvos macos maui
-        } elseif ($IsMacOS) {
-          dotnet workload install android aspire ios tvos macos maui
-        } else {
-          # Linux - skip iOS, tvOS, macOS, and maui workloads (not supported)
-          dotnet workload install android aspire
-        }
-        dotnet workload list
-      working-directory: a/src
+      uses: ./github-action-workflows/.github/actions/dotnet-install-workloads
+      with:
+        workloads: ${{ inputs.workloads }}
     
     - name: Cleanup nuget local storage
       shell: pwsh
