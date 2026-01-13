@@ -26,26 +26,45 @@ jobs:
           
           # Use GitHub CLI to check immutable releases status
           if command -v gh &> /dev/null; then
-            # Call the immutable-releases endpoint
-            immutable_status=$(gh api \
+            # Call the immutable-releases endpoint and capture both response and status
+            response=$(gh api \
               -H "Accept: application/vnd.github+json" \
               -H "X-GitHub-Api-Version: 2022-11-28" \
               /repos/${{ github.repository }}/immutable-releases \
-              --jq '.enabled' 2>/dev/null || echo "unknown")
+              --include 2>&1)
+            
+            api_exit_code=$?
+            
+            # Extract HTTP status code from response
+            http_status=$(echo "$response" | grep -i "^HTTP" | tail -1 | awk '{print $2}')
+            
+            # Extract the enabled field from JSON response
+            immutable_status=$(echo "$response" | grep -v "^HTTP" | jq -r '.enabled' 2>/dev/null || echo "unknown")
+            
+            # Check for HTTP 200 response
+            if [ "$http_status" != "200" ]; then
+              echo "::error::Failed to query immutable releases API (HTTP $http_status)"
+              echo "immutable_releases_enabled=false" >> "$GITHUB_OUTPUT"
+              exit 1
+            fi
             
             if [ "$immutable_status" == "true" ]; then
               echo "::notice::Immutable releases are enabled"
               echo "immutable_releases_enabled=true" >> "$GITHUB_OUTPUT"
+              exit 0
             elif [ "$immutable_status" == "false" ]; then
-              echo "::warning::Immutable releases are NOT enabled"
-              echo "::warning::Immutable releases prevent modification of published releases (assets and tags)"
-              echo "::warning::This feature may require specific GitHub plan or organization settings"
+              echo "::error::Immutable releases are NOT enabled"
+              echo "::error::Immutable releases prevent modification of published releases (assets and tags)"
+              echo "::error::This feature may require specific GitHub plan or organization settings"
               echo "immutable_releases_enabled=false" >> "$GITHUB_OUTPUT"
+              exit 1
             else
-              echo "::warning::Could not determine immutable releases status (may not be available for this repository type)"
+              echo "::error::Could not determine immutable releases status (may not be available for this repository type)"
               echo "immutable_releases_enabled=false" >> "$GITHUB_OUTPUT"
+              exit 1
             fi
           else
             echo "::error::GitHub CLI not available"
             echo "immutable_releases_enabled=false" >> "$GITHUB_OUTPUT"
+            exit 1
           fi
