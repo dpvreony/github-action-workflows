@@ -26,20 +26,22 @@ jobs:
           
           # Use GitHub CLI to check immutable releases status
           if command -v gh &> /dev/null; then
-            # Call the immutable-releases endpoint and capture both response and status
-            response=$(gh api \
+            # Call the immutable-releases endpoint with include flag to get HTTP status
+            # Store response in a temporary file to handle headers and body separately
+            temp_response=$(mktemp)
+            
+            # Make API call and capture HTTP status
+            http_status=$(gh api \
               -H "Accept: application/vnd.github+json" \
               -H "X-GitHub-Api-Version: 2022-11-28" \
               /repos/${{ github.repository }}/immutable-releases \
-              --include 2>&1)
+              --include 2>&1 | tee "$temp_response" | grep -i "^HTTP" | tail -1 | awk '{print $2}')
             
-            api_exit_code=$?
+            # Extract just the JSON body (everything after headers)
+            json_body=$(sed -n '/^{/,$p' "$temp_response")
             
-            # Extract HTTP status code from response
-            http_status=$(echo "$response" | grep -i "^HTTP" | tail -1 | awk '{print $2}')
-            
-            # Extract the enabled field from JSON response
-            immutable_status=$(echo "$response" | grep -v "^HTTP" | jq -r '.enabled' 2>/dev/null || echo "unknown")
+            # Clean up temp file
+            rm -f "$temp_response"
             
             # Check for HTTP 200 response
             if [ "$http_status" != "200" ]; then
@@ -47,6 +49,9 @@ jobs:
               echo "immutable_releases_enabled=false" >> "$GITHUB_OUTPUT"
               exit 1
             fi
+            
+            # Extract the enabled field from JSON response
+            immutable_status=$(echo "$json_body" | jq -r '.enabled' 2>/dev/null || echo "unknown")
             
             if [ "$immutable_status" == "true" ]; then
               echo "::notice::Immutable releases are enabled"
