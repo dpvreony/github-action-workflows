@@ -433,7 +433,28 @@ jobs:
       with:
         name: nuget
         path: ${{ github.workspace }}/nuget
+    
+    - name: Download DocFX Artifact
+      uses: actions/download-artifact@v7
+      with:
+        name: docfx
+        path: ${{ github.workspace }}/docfx
+    
+    - name: Create docfx-metadata.zip
+      shell: pwsh
+      run: |
+        $docfxPath = "${{ github.workspace }}/docfx"
+        $zipPath = "${{ github.workspace }}/docfx-metadata.zip"
+        
+        if (Test-Path $docfxPath) {
+          Compress-Archive -Path "$docfxPath/*" -DestinationPath $zipPath -CompressionLevel Optimal
+          Write-Output "::notice::Created docfx-metadata.zip with contents from docfx artifact"
+        } else {
+          Write-Output "::warning::DocFX artifact path not found, skipping zip creation"
+        }
+    
     - name: Create Release
+      id: create_release
       uses: actions/create-release@v1
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
@@ -442,6 +463,16 @@ jobs:
           release_name: ${{ needs.build.outputs.nbgv }}
           body: |
             ${{ needs.build.outputs.change_commit_log }}
+    
+    - name: Upload DocFX Metadata to Release
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ${{ github.workspace }}/docfx-metadata.zip
+        asset_name: docfx-metadata.zip
+        asset_content_type: application/zip
 
     - name: NuGet login (OIDC → temp API key)
       uses: NuGet/login@v1
