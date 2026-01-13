@@ -123,6 +123,8 @@ jobs:
     uses: ./.github/workflows/_wfc_dotnet-ci-check-codeql-enabled.yml
 
   check-deterministic-enabled:
+    permissions:
+      contents: read
     uses: ./.github/workflows/_wfc_dotnet-ci-check-deterministic-enabled.yml
 
   codeql:
