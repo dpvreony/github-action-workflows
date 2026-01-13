@@ -133,6 +133,7 @@ runs:
         New-Item -ItemType Directory -Force -Path artifacts/outdated | Out-Null
         New-Item -ItemType Directory -Force -Path artifacts/sbom | Out-Null
         New-Item -ItemType Directory -Force -Path artifacts/binlog | Out-Null
+        New-Item -ItemType Directory -Force -Path artifacts/docfx | Out-Null
     
     - name: Restore Packages
       shell: pwsh
@@ -261,6 +262,7 @@ runs:
           ./artifacts/nuget/*.nupkg
 
     - name: Produce DocFX API metadata
+      if: inputs.isPrimaryBuildOs == 'true'
       shell: pwsh
       working-directory: artifacts/docfx
       run: |
@@ -333,3 +335,10 @@ runs:
       with:
         name: outdated
         path: artifacts/outdated
+
+    - name: store docfx
+      if: inputs.isPrimaryBuildOs == 'true'
+      uses: actions/upload-artifact@v6
+      with:
+        name: docfx
+        path: artifacts/docfx
