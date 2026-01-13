@@ -56,7 +56,6 @@ The workflow consists of several jobs, many of which delegate their logic to ded
 | `build-macos`             | Builds on macOS (optional, never releases)           | `_wfc_dotnet-ci-build-macos.yml`                      |
 | `build-windows`           | Builds on Windows (when selected as primary OS)      | `_wfc_dotnet-ci-build-windows.yml`                    |
 | `check-codeql-enabled`    | Checks if CodeQL should run based on repository visibility and Advanced Security settings | `_wfc_dotnet-ci-check-codeql-enabled.yml`             |
-| `check-deterministic-enabled` | Checks if deterministic builds are enabled (Deterministic and ContinuousIntegrationBuild properties) | `_wfc_dotnet-ci-check-deterministic-enabled.yml`      |
 | `check-nuget-user-populated` | Checks if NUGET_USER secret is set | Inline                                                |
 | `check-nuget-trusted-publisher-valid` | Validates NuGet Trusted Publisher login before approval by testing NuGet/login@v1 action | Inline (uses `NuGet/login@v1`)  |
 | `check-nuget-environment` | Validates NuGet environment protection               | Inline (uses `dpvreony/ensure-environment-protected`)  |
@@ -81,7 +80,6 @@ These workflow files are referenced by the main workflow via the `uses:` keyword
 - `.github/workflows/_wfc_dotnet-ci-build-macos.yml` (macOS-specific build)
 - `.github/workflows/_wfc_dotnet-ci-build-windows.yml` (Windows-specific build)
 - `.github/workflows/_wfc_dotnet-ci-check-codeql-enabled.yml`
-- `.github/workflows/_wfc_dotnet-ci-check-deterministic-enabled.yml`
 - `.github/workflows/_wfc_dotnet-ci-codeql.yml`
 - `.github/workflows/_wfc_dotnet-ci-deprecated-nuget-packages.yml`
 - `.github/workflows/_wfc_dotnet-ci-licenses.yml`
