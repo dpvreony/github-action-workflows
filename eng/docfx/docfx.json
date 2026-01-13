@@ -10,12 +10,12 @@
             }
         ],
         "exclude": [
-            "**/*.Benchmarks/**",
-            "**/*.IntegrationTests/**",
-            "**/*.Testing/**",
-            "**/*.UnitTests/**"
+            "../../../a/src/*.Benchmarks/**",
+            "../../../a/src/*.IntegrationTests/**",
+            "../../../a/src/**/*.Testing/**",
+            "../../../a/src/**/*.UnitTests/**"
           ],
-        "dest": "api",
+        "dest": "../../../artifacts/docfx/api",
         "disableGitFeatures": false,
         "disableDefaultFilter": false
     }
