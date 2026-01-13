@@ -6,15 +6,15 @@
                 "files": [
                     "*.sln"
                 ],
+                "exclude": [
+                    "**/*.Benchmarks/**",
+                    "**/*.IntegrationTests/**",
+                    "**/*.Testing/**",
+                    "**/*.UnitTests/**"
+                  ],
                 "src": "../../../a/src/"
             }
         ],
-        "exclude": [
-            "../../../a/src/*.Benchmarks/**",
-            "../../../a/src/*.IntegrationTests/**",
-            "../../../a/src/**/*.Testing/**",
-            "../../../a/src/**/*.UnitTests/**"
-          ],
         "dest": "../../../artifacts/docfx/api",
         "disableGitFeatures": false,
         "disableDefaultFilter": false
