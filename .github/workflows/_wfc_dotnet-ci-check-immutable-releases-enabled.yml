@@ -38,7 +38,8 @@ jobs:
               echo "immutable_releases_enabled=true" >> "$GITHUB_OUTPUT"
             elif [ "$immutable_status" == "false" ]; then
               echo "::warning::Immutable releases are NOT enabled"
-              echo "::warning::Consider enabling immutable releases to prevent modification of published releases"
+              echo "::warning::Immutable releases prevent modification of published releases (assets and tags)"
+              echo "::warning::This feature may require specific GitHub plan or organization settings"
               echo "immutable_releases_enabled=false" >> "$GITHUB_OUTPUT"
             else
               echo "::warning::Could not determine immutable releases status (may not be available for this repository type)"
