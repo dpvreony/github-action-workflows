@@ -1,0 +1,75 @@
+# name is made short because the check path becomes really long and repetitive
+name: check-deterministic
+
+on:
+  workflow_call:
+    outputs:
+      deterministic_enabled:
+        description: 'Whether deterministic builds are properly configured (true if Deterministic and ContinuousIntegrationBuild are set)'
+        value: ${{ jobs.check.outputs.deterministic_enabled }}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      deterministic_enabled: ${{ steps.check.outputs.deterministic_enabled }}
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+      
+      - name: Check if deterministic builds are enabled
+        id: check
+        run: |
+          # Find all .csproj, .fsproj, .vbproj files, and Directory.Build.props
+          project_files=$(find . -type f \( -name "*.csproj" -o -name "*.fsproj" -o -name "*.vbproj" -o -name "Directory.Build.props" \) ! -path "./.git/*" ! -path "*/obj/*" ! -path "*/bin/*")
+          
+          if [ -z "$project_files" ]; then
+            echo "::warning::No project files found to check for deterministic build settings"
+            echo "deterministic_enabled=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          
+          echo "Checking project files for deterministic build settings..."
+          echo "$project_files"
+          echo ""
+          
+          # Check for Deterministic property
+          deterministic_found=false
+          continuousintegrationbuild_found=false
+          
+          # Check each project file
+          while IFS= read -r file; do
+            if [ -f "$file" ]; then
+              # Check for Deterministic property
+              if grep -q "<Deterministic>true</Deterministic>" "$file"; then
+                echo "✓ Found Deterministic=true in: $file"
+                deterministic_found=true
+              fi
+              
+              # Check for ContinuousIntegrationBuild property
+              if grep -q "<ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>" "$file"; then
+                echo "✓ Found ContinuousIntegrationBuild=true in: $file"
+                continuousintegrationbuild_found=true
+              fi
+            fi
+          done <<< "$project_files"
+          
+          echo ""
+          
+          # Evaluate results
+          if [ "$deterministic_found" = true ] && [ "$continuousintegrationbuild_found" = true ]; then
+            echo "::notice::✓ Deterministic builds are properly configured"
+            echo "deterministic_enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Deterministic builds are not properly configured"
+            if [ "$deterministic_found" = false ]; then
+              echo "::warning::  - Missing: <Deterministic>true</Deterministic>"
+            fi
+            if [ "$continuousintegrationbuild_found" = false ]; then
+              echo "::warning::  - Missing: <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>"
+            fi
+            echo "::warning::Add these properties to Directory.Build.props or individual project files"
+            echo "deterministic_enabled=false" >> "$GITHUB_OUTPUT"
+          fi

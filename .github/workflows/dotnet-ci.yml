@@ -122,6 +122,9 @@ jobs:
   check-codeql-enabled:
     uses: ./.github/workflows/_wfc_dotnet-ci-check-codeql-enabled.yml
 
+  check-deterministic-enabled:
+    uses: ./.github/workflows/_wfc_dotnet-ci-check-deterministic-enabled.yml
+
   codeql:
     needs: check-codeql-enabled
     if: needs.check-codeql-enabled.outputs.codeql_enabled == 'true'
