@@ -51,20 +51,19 @@ jobs:
             # Extract HTTP status code (look for HTTP/x.x or HTTP/x status line)
             http_status=$(grep -E "^HTTP/[0-9.]+ [0-9]+" "$temp_response" | tail -1 | awk '{print $2}')
             
+            # Extract JSON body (everything after blank line that separates headers from body)
+            json_body=$(awk '/^[[:space:]]*$/{flag=1; next} flag' "$temp_response")
+            
             # Check for HTTP 200 response
             if [ "$http_status" != "200" ]; then
               echo "::error::Failed to query immutable releases API (HTTP ${http_status:-unknown})"
               # Show response body for debugging
-              json_body=$(awk '/^[[:space:]]*$/{flag=1; next} flag' "$temp_response")
               if [ -n "$json_body" ]; then
                 echo "::error::Response body: $json_body"
               fi
               echo "immutable_releases_enabled=false" >> "$GITHUB_OUTPUT"
               exit 1
             fi
-            
-            # Extract JSON body (everything after blank line that separates headers from body)
-            json_body=$(awk '/^[[:space:]]*$/{flag=1; next} flag' "$temp_response")
             
             # Extract the enabled field from JSON response
             immutable_status=$(echo "$json_body" | jq -r '.enabled' 2>/dev/null || echo "unknown")
