@@ -25,6 +25,7 @@ jobs:
     with:
       solutionName: "Workflow"
       buildOs: "windows"
+      workloads: "android,aspire,ios,tvos,macos,maui"
 
   actionlint:
     runs-on: ubuntu-latest

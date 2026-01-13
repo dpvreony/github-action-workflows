@@ -26,6 +26,25 @@ runs:
           exit 0
         }
         
+        # Define workloads that are not supported on Linux
+        $linuxUnsupportedWorkloads = @('ios', 'tvos', 'macos', 'maui')
+        
+        # Filter out unsupported workloads on Linux
+        if ($IsLinux) {
+          $originalCount = $workloads.Count
+          $workloads = $workloads | Where-Object { $_ -notin $linuxUnsupportedWorkloads }
+          $skippedCount = $originalCount - $workloads.Count
+          
+          if ($skippedCount -gt 0) {
+            Write-Output "::notice::Skipped $skippedCount workload(s) not supported on Linux: $($linuxUnsupportedWorkloads -join ', ')"
+          }
+          
+          if ($workloads.Count -eq 0) {
+            Write-Output "::notice::No Linux-compatible workloads to install"
+            exit 0
+          }
+        }
+        
         Write-Output "::notice::Installing $($workloads.Count) workload(s): $($workloads -join ', ')"
         
         foreach ($workload in $workloads) {
