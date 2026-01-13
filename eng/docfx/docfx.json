@@ -1,0 +1,17 @@
+{
+  "metadata": [
+    {
+        "src": [
+            {
+                "files": [
+                    "*.sln"
+                ],
+                "src": "../../../a/src/"
+            }
+        ],
+      "dest": "api",
+      "disableGitFeatures": false,
+      "disableDefaultFilter": false
+    }
+  ]
+}

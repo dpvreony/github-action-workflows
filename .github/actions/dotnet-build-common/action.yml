@@ -259,7 +259,13 @@ runs:
         monitor_path: /ghaction-virustotal
         files: |
           ./artifacts/nuget/*.nupkg
-    
+
+    - name: Produce DocFX API metadata
+      shell: pwsh
+      working-directory: artifacts/docfx
+      run: |
+        docfx metadata sbom-tool ${{ github.workspace }}/github-action-workflows/eng/docfx/docfx.json
+
     - name: Upload Code Coverage
       if: inputs.codecovToken != ''
       shell: pwsh
