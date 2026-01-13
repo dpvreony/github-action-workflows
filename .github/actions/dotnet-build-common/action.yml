@@ -266,7 +266,7 @@ runs:
       shell: pwsh
       working-directory: artifacts/docfx
       run: |
-        docfx metadata "${{ github.workspace }}/github-action-workflows/eng/docfx/docfx.json"
+        docfx metadata "${{ github.workspace }}/github-action-workflows/eng/docfx/docfx.json" --logLevel verbose
 
     - name: Upload Code Coverage
       if: inputs.codecovToken != ''

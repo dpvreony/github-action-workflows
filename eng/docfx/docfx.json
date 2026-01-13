@@ -9,9 +9,15 @@
                 "src": "../../../a/src/"
             }
         ],
-      "dest": "api",
-      "disableGitFeatures": false,
-      "disableDefaultFilter": false
+        "exclude": [
+            "**/*.Benchmarks/**",
+            "**/*.IntegrationTests/**",
+            "**/*.Testing/**",
+            "**/*.UnitTests/**"
+          ],
+        "dest": "api",
+        "disableGitFeatures": false,
+        "disableDefaultFilter": false
     }
   ]
 }
