@@ -31,6 +31,11 @@ on:
         type: string
         default: ''
         description: 'Comma-separated list of .NET workloads to install'
+      apiDocumentation:
+        required: false
+        type: string
+        default: 'DocFx'
+        description: 'API Documentation generation tool. Set to "DocFx" to enable DocFX metadata generation, or any other value to disable it.'
     secrets:
       SONAR_TOKEN:
         required: false
@@ -70,6 +75,7 @@ jobs:
       isPrimaryBuildOs: ${{ inputs.buildOs == 'linux' }}
       runIntTests: ${{ !inputs.runIntTestsOnPrimaryOsOnly || inputs.buildOs == 'linux' }}
       workloads: ${{ inputs.workloads }}
+      apiDocumentation: ${{ inputs.apiDocumentation }}
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
@@ -87,6 +93,7 @@ jobs:
       isPrimaryBuildOs: true
       runIntTests: ${{ !inputs.runIntTestsOnPrimaryOsOnly || inputs.buildOs == 'windows' }}
       workloads: ${{ inputs.workloads }}
+      apiDocumentation: ${{ inputs.apiDocumentation }}
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
@@ -103,5 +110,6 @@ jobs:
       useSlnx: ${{ inputs.useSlnx }}
       runIntTests: ${{ !inputs.runIntTestsOnPrimaryOsOnly }}
       workloads: ${{ inputs.workloads }}
+      apiDocumentation: ${{ inputs.apiDocumentation }}
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

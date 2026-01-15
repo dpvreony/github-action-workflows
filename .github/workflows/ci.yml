@@ -26,6 +26,7 @@ jobs:
       solutionName: "Workflow"
       buildOs: "windows"
       workloads: "android,aspire,ios,tvos,macos,maui"
+      apiDocumentation: "DocFx"
 
   actionlint:
     runs-on: ubuntu-latest

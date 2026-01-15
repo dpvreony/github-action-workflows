@@ -21,6 +21,11 @@ on:
         type: string
         default: ''
         description: 'Comma-separated list of .NET workloads to install'
+      apiDocumentation:
+        required: false
+        type: string
+        default: 'DocFx'
+        description: 'API Documentation generation tool. Set to "DocFx" to enable DocFX metadata generation, or any other value to disable it.'
     secrets:
       CODECOV_TOKEN:
         required: false
@@ -62,3 +67,4 @@ jobs:
           osName: macos
           workloads: ${{ inputs.workloads }}
           codecovToken: ${{ secrets.CODECOV_TOKEN }}
+          apiDocumentation: ${{ inputs.apiDocumentation }}

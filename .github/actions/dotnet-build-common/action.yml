@@ -40,6 +40,10 @@ inputs:
     description: 'Comma-separated list of .NET workloads to install'
     required: false
     default: ''
+  apiDocumentation:
+    description: 'API Documentation generation tool. Set to "DocFx" to enable DocFX metadata generation, or any other value to disable it.'
+    required: false
+    default: 'DocFx'
 outputs:
   nbgvVersion:
     description: 'NBGV SemVer2 version'
@@ -257,7 +261,7 @@ runs:
           ./artifacts/nuget/*.nupkg
 
     - name: Produce DocFX API metadata
-      if: inputs.isPrimaryBuildOs == 'true'
+      if: inputs.isPrimaryBuildOs == 'true' && inputs.apiDocumentation == 'DocFx'
       shell: pwsh
       working-directory: artifacts/docfx
       run: |
@@ -332,7 +336,7 @@ runs:
         path: artifacts/outdated
 
     - name: store docfx
-      if: inputs.isPrimaryBuildOs == 'true'
+      if: inputs.isPrimaryBuildOs == 'true' && inputs.apiDocumentation == 'DocFx'
       uses: actions/upload-artifact@v6
       with:
         name: docfx

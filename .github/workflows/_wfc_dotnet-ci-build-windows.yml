@@ -26,6 +26,11 @@ on:
         type: string
         default: ''
         description: 'Comma-separated list of .NET workloads to install'
+      apiDocumentation:
+        required: false
+        type: string
+        default: 'DocFx'
+        description: 'API Documentation generation tool. Set to "DocFx" to enable DocFX metadata generation, or any other value to disable it.'
     secrets:
       SONAR_TOKEN:
         required: false
@@ -102,3 +107,4 @@ jobs:
           sonarOrganisationKey: ${{ secrets.SONAR_ORGANISATION_KEY }}
           githubToken: ${{ secrets.GITHUB_TOKEN }}
           virusTotalApiKey: ${{ secrets.VIRUSTOTAL_API_KEY }}
+          apiDocumentation: ${{ inputs.apiDocumentation }}
