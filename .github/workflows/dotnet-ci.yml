@@ -81,6 +81,8 @@ jobs:
       useSlnx: ${{ inputs.useSlnx }}
 
   osv-scan:
+    needs: check-codeql-enabled
+    if: needs.check-codeql-enabled.outputs.codeql_enabled == 'true'
     uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@v2.3.2"
     permissions:
       actions: read
