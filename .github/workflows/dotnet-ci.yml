@@ -32,6 +32,11 @@ on:
         type: string
         default: ''
         description: 'Comma-separated list of .NET workloads to install (e.g., "android,aspire,maui"). Leave empty for no workload installation.'
+      apiDocumentation:
+        required: false
+        type: string
+        default: 'DocFx'
+        description: 'API Documentation generation tool. Set to "DocFx" to enable DocFX metadata generation, or any other value to disable it.'
     secrets:
       NUGET_API_KEY:
         required: false
@@ -60,6 +65,7 @@ jobs:
       requiresMacOS: ${{ inputs.requiresMacOS }}
       runIntTestsOnPrimaryOsOnly: ${{ inputs.runIntTestsOnPrimaryOsOnly }}
       workloads: ${{ inputs.workloads }}
+      apiDocumentation: ${{ inputs.apiDocumentation }}
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
@@ -441,12 +447,14 @@ jobs:
         path: ${{ github.workspace }}/nuget
     
     - name: Download DocFX Artifact
+      if: inputs.apiDocumentation == 'DocFx'
       uses: actions/download-artifact@v7
       with:
         name: docfx
         path: ${{ github.workspace }}/docfx
     
     - name: Create docfx-metadata.zip
+      if: inputs.apiDocumentation == 'DocFx'
       shell: pwsh
       run: |
         $docfxPath = "${{ github.workspace }}/docfx"
@@ -471,6 +479,7 @@ jobs:
             ${{ needs.build.outputs.change_commit_log }}
     
     - name: Upload DocFX Metadata to Release
+      if: inputs.apiDocumentation == 'DocFx'
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
