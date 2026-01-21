@@ -246,11 +246,11 @@ runs:
       run: |
         if ('${{ inputs.nugetValidationWarnOnly }}' -eq 'true')
         {
-          meziantou.validate-nuget-package "${{ github.workspace }}/artifacts/nuget" --only-report-errors
+          dotnet meziantou.validate-nuget-package "${{ github.workspace }}/artifacts/nuget" --only-report-errors
         }
         else
         {
-          meziantou.validate-nuget-package "${{ github.workspace }}/artifacts/nuget"
+          dotnet meziantou.validate-nuget-package "${{ github.workspace }}/artifacts/nuget"
         }
 
     - name: Generate SBOM
