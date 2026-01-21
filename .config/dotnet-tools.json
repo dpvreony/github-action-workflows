@@ -78,6 +78,13 @@
         "docfx"
       ],
       "rollForward": false
+    },
+    "meziantou.framework.nugetpackagevalidation.tool": {
+      "version": "1.0.42",
+      "commands": [
+        "meziantou.validate-nuget-package"
+      ],
+      "rollForward": false
     }
   }
 }
