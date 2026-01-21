@@ -44,6 +44,10 @@ inputs:
     description: 'API Documentation generation tool. Set to "DocFx" to enable DocFX metadata generation, or any other value to disable it.'
     required: false
     default: 'DocFx'
+  nugetValidationWarnOnly:
+    description: 'Whether to only warn when doing nuget package validation'
+    required: false
+    default: 'false'
 outputs:
   nbgvVersion:
     description: 'NBGV SemVer2 version'
@@ -240,7 +244,14 @@ runs:
       if: inputs.isPrimaryBuildOs == 'true'
       shell: pwsh
       run: |
-        meziantou.validate-nuget-package "${{ github.workspace }}/artifacts/nuget"
+        if ('${{ inputs.nugetValidationWarnOnly }}' -eq 'true')
+        {
+          meziantou.validate-nuget-package "${{ github.workspace }}/artifacts/nuget" --only-report-errors
+        }
+        else
+        {
+          meziantou.validate-nuget-package "${{ github.workspace }}/artifacts/nuget"
+        }
 
     - name: Generate SBOM
       if: inputs.isPrimaryBuildOs == 'true'
