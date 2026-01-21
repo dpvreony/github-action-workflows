@@ -235,7 +235,13 @@ runs:
         '@
         $solutionExt = if ('${{ inputs.useSlnx }}' -eq 'true') { 'slnx' } else { 'sln' }
         dotnet pack "${{ inputs.solutionName }}.$solutionExt" --configuration Release --no-build /bl:${{ github.workspace }}/artifacts/binlog/pack.binlog --nologo /p:PackageOutputPath=${{ github.workspace }}/artifacts/nuget /p:ContinuousIntegrationBuild=true
-    
+
+    - name: Validate Nuget Packages
+      if: inputs.isPrimaryBuildOs == 'true'
+      shell: pwsh
+      run: |
+        meziantou.validate-nuget-package "${{ github.workspace }}/artifacts/nuget"
+
     - name: Generate SBOM
       if: inputs.isPrimaryBuildOs == 'true'
       shell: pwsh
