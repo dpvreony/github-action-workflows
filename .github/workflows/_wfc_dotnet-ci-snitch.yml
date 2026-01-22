@@ -24,12 +24,12 @@ jobs:
       solutionpath: ${{ inputs.solutionName }}.${{ inputs.useSlnx && 'slnx' || 'sln' }}
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6.0.1
+      uses: actions/checkout@v6.0.2
       with:
         path: a
 
     - name: Checkout dpvreony/github-action-workflow
-      uses: actions/checkout@v6.0.1
+      uses: actions/checkout@v6.0.2
       with:
         repository: dpvreony/github-action-workflows
         path: github-action-workflows
