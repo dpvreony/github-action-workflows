@@ -494,8 +494,10 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
+        set -e
         # Publish the draft release
         gh release edit ${{ needs.build.outputs.nbgv }} --draft=false
+        echo "::notice::Successfully published release ${{ needs.build.outputs.nbgv }}"
 
     - name: NuGet login (OIDC → temp API key)
       uses: NuGet/login@v1
