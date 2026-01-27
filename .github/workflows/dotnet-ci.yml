@@ -496,8 +496,12 @@ jobs:
       run: |
         set -e
         # Publish the draft release
-        gh release edit ${{ needs.build.outputs.nbgv }} --draft=false
-        echo "::notice::Successfully published release ${{ needs.build.outputs.nbgv }}"
+        if gh release edit ${{ needs.build.outputs.nbgv }} --draft=false; then
+          echo "::notice::Successfully published release ${{ needs.build.outputs.nbgv }}"
+        else
+          echo "::error::Failed to publish release ${{ needs.build.outputs.nbgv }}"
+          exit 1
+        fi
 
     - name: NuGet login (OIDC → temp API key)
       uses: NuGet/login@v1
