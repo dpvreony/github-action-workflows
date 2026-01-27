@@ -477,6 +477,7 @@ jobs:
           release_name: ${{ needs.build.outputs.nbgv }}
           body: |
             ${{ needs.build.outputs.change_commit_log }}
+          draft: true
     
     - name: Upload DocFX Metadata to Release
       if: inputs.apiDocumentation == 'DocFx'
@@ -488,6 +489,19 @@ jobs:
         asset_path: ${{ github.workspace }}/docfx-metadata.zip
         asset_name: docfx-metadata.zip
         asset_content_type: application/zip
+
+    - name: Publish Release
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        set -e
+        # Publish the draft release
+        if gh release edit ${{ needs.build.outputs.nbgv }} --draft=false; then
+          echo "::notice::Successfully published release ${{ needs.build.outputs.nbgv }}"
+        else
+          echo "::error::Failed to publish release ${{ needs.build.outputs.nbgv }}"
+          exit 1
+        fi
 
     - name: NuGet login (OIDC → temp API key)
       uses: NuGet/login@v1
