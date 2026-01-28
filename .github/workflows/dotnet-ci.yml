@@ -252,7 +252,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           # Try to get the latest release
-          latest_release=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' 2>/dev/null || echo "")
+          latest_release=$(gh release list --repo "${{ github.repository }}" --limit 1 --json tagName --jq '.[0].tagName' 2>/dev/null || echo "")
           
           if [ -z "$latest_release" ]; then
             echo "No existing release found, release is required"
@@ -496,7 +496,7 @@ jobs:
       run: |
         set -e
         # Publish the draft release
-        if gh release edit ${{ needs.build.outputs.nbgv }} --draft=false; then
+        if gh release edit "${{ needs.build.outputs.nbgv }}" --repo "${{ github.repository }}" --draft=false; then
           echo "::notice::Successfully published release ${{ needs.build.outputs.nbgv }}"
         else
           echo "::error::Failed to publish release ${{ needs.build.outputs.nbgv }}"
