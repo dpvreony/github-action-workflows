@@ -54,6 +54,8 @@ on:
         required: false
       CODECOV_TOKEN:
         required: false
+      SYNCFUSION_LICENSE_KEY:
+        required: false
 
 jobs:
   build:
@@ -72,6 +74,7 @@ jobs:
       SONAR_ORGANISATION_KEY: ${{ secrets.SONAR_ORGANISATION_KEY }}
       VIRUSTOTAL_API_KEY: ${{ secrets.VIRUSTOTAL_API_KEY }}
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      SYNCFUSION_LICENSE_KEY: ${{ secrets.SYNCFUSION_LICENSE_KEY }}
 
   licenses:
     uses: ./.github/workflows/_wfc_dotnet-ci-licenses.yml
