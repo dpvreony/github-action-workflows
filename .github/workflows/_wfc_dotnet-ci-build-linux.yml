@@ -42,6 +42,8 @@ on:
         required: false
       CODECOV_TOKEN:
         required: false
+      SYNCFUSION_LICENSE_KEY:
+        required: false
     outputs:
       nbgv:
         description: 'NBGV SemVer2 version'
@@ -97,3 +99,4 @@ jobs:
           githubToken: ${{ secrets.GITHUB_TOKEN }}
           virusTotalApiKey: ${{ secrets.VIRUSTOTAL_API_KEY }}
           apiDocumentation: ${{ inputs.apiDocumentation }}
+          syncfusionLicense: ${{ secrets.SYNCFUSION_LICENSE_KEY }}
