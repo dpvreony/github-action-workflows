@@ -44,6 +44,10 @@ inputs:
     description: 'API Documentation generation tool. Set to "DocFx" to enable DocFX metadata generation, or any other value to disable it.'
     required: false
     default: 'DocFx'
+  syncFusionLicense:
+    description: 'License key to apply to Syncfusion components'
+    required: false
+    default: ''
 outputs:
   nbgvVersion:
     description: 'NBGV SemVer2 version'
@@ -170,7 +174,7 @@ runs:
         ${{ steps.changelog.outputs.commitLog }}
         '@
         $solutionExt = if ('${{ inputs.useSlnx }}' -eq 'true') { 'slnx' } else { 'sln' }
-        dotnet build "${{ inputs.solutionName }}.$solutionExt" --configuration Release --no-restore /bl:${{ github.workspace }}/artifacts/binlog/build.binlog /p:ContinuousIntegrationBuild=true
+        dotnet build "${{ inputs.solutionName }}.$solutionExt" --configuration Release --no-restore /bl:${{ github.workspace }}/artifacts/binlog/build.binlog /p:ContinuousIntegrationBuild=true "/p:SyncfusionLicense={inputs.syncFusionLicense}"
     
     - name: Run Unit Tests
       shell: pwsh
