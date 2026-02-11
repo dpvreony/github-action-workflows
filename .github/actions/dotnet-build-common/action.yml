@@ -44,6 +44,10 @@ inputs:
     description: 'API Documentation generation tool. Set to "DocFx" to enable DocFX metadata generation, or any other value to disable it.'
     required: false
     default: 'DocFx'
+  nugetValidationWarnOnly:
+    description: 'Whether to only warn when doing nuget package validation'
+    required: false
+    default: 'false'
 outputs:
   nbgvVersion:
     description: 'NBGV SemVer2 version'
@@ -235,7 +239,20 @@ runs:
         '@
         $solutionExt = if ('${{ inputs.useSlnx }}' -eq 'true') { 'slnx' } else { 'sln' }
         dotnet pack "${{ inputs.solutionName }}.$solutionExt" --configuration Release --no-build /bl:${{ github.workspace }}/artifacts/binlog/pack.binlog --nologo /p:PackageOutputPath=${{ github.workspace }}/artifacts/nuget /p:ContinuousIntegrationBuild=true
-    
+
+    - name: Validate Nuget Packages
+      if: inputs.isPrimaryBuildOs == 'true'
+      shell: pwsh
+      run: |
+        if ('${{ inputs.nugetValidationWarnOnly }}' -eq 'true')
+        {
+          dotnet meziantou.validate-nuget-package "${{ github.workspace }}/artifacts/nuget" --only-report-errors
+        }
+        else
+        {
+          dotnet meziantou.validate-nuget-package "${{ github.workspace }}/artifacts/nuget"
+        }
+
     - name: Generate SBOM
       if: inputs.isPrimaryBuildOs == 'true'
       shell: pwsh
