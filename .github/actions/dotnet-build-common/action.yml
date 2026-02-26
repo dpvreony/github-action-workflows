@@ -286,14 +286,14 @@ runs:
     
     - name: store binlogs
       if: failure()
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: binlogs-${{ inputs.osName }}
         path: artifacts/binlog
     
     - name: store unit test coverage
       if: inputs.isPrimaryBuildOs == 'true'
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: unittestcoverage
         path: artifacts/unittestcoverage
@@ -301,14 +301,14 @@ runs:
     
     - name: store integration test coverage
       if: inputs.isPrimaryBuildOs == 'true' && inputs.runIntTests == 'true'
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: inttestcoverage
         path: artifacts/inttestcoverage
     
     - name: store nuget packages
       if: inputs.isPrimaryBuildOs == 'true'
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: nuget
         path: artifacts/nuget
@@ -316,28 +316,28 @@ runs:
     
     - name: store omd
       if: inputs.isPrimaryBuildOs == 'true'
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: omd
         path: artifacts/omd
     
     - name: store sbom
       if: inputs.isPrimaryBuildOs == 'true'
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: sbom
         path: artifacts/sbom
     
     - name: store outdated
       if: inputs.isPrimaryBuildOs == 'true'
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: outdated
         path: artifacts/outdated
 
     - name: store docfx
       if: inputs.isPrimaryBuildOs == 'true' && inputs.apiDocumentation == 'DocFx'
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: docfx
         path: artifacts/docfx
