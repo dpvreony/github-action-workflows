@@ -66,7 +66,7 @@ jobs:
 
     - name: store vulnerable package output
       if: ${{ always() }}
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: nuget-deprecated
         path: artifacts/nuget-deprecated
