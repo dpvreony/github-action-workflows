@@ -252,7 +252,7 @@ runs:
     
     - name: VirusTotal Monitor Scan
       if: inputs.isPrimaryBuildOs == 'true' && inputs.virusTotalApiKey != ''
-      uses: crazy-max/ghaction-virustotal@v4
+      uses: crazy-max/ghaction-virustotal@v5
       with:
         vt_api_key: ${{ inputs.virusTotalApiKey }}
         vt_monitor: true
