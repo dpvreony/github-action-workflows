@@ -178,9 +178,9 @@ runs:
     
     - name: Run Unit Tests
       shell: pwsh
-      working-directory: a/src
+      working-directory: a/src/${{ inputs.solutionName }}.UnitTests
       run: |
-        dotnet test --project ${{ inputs.solutionName }}.UnitTests/${{ inputs.solutionName }}.UnitTests.csproj --verbosity normal --configuration Release --no-build /bl:${{ github.workspace }}/artifacts/binlog/unittest.binlog -- --coverage --coverage-output-format cobertura --coverage-output coverage.xml --long-running 10 --results-directory ${{ github.workspace }}/artifacts/unittestcoverage
+        dotnet run --no-build --configuration Release /bl:${{ github.workspace }}/artifacts/binlog/unittest.binlog --no-ansi --output detailed --coverage --coverage-output-format cobertura --coverage-output coverage.xml --long-running 10 --results-directory "${{ github.workspace }}/artifacts/unittestcoverage"
     
     - name: Run Sonar Scanner end
       if: inputs.isPrimaryBuildOs == 'true' && inputs.sonarToken != '' && inputs.sonarProjectKey != '' && inputs.sonarOrganisationKey != ''
@@ -212,9 +212,9 @@ runs:
     - name: Run Integration Tests
       if: inputs.runIntTests == 'true'
       shell: pwsh
-      working-directory: a/src
+      working-directory: a/src/${{ inputs.solutionName }}.IntegrationTests
       run: |
-        dotnet test --project ${{ inputs.solutionName }}.IntegrationTests/${{ inputs.solutionName }}.IntegrationTests.csproj --configuration Release --no-build /bl:../artifacts/binlog/inttest.binlog -- --coverage --coverage-output-format cobertura --coverage-output coverage.xml --long-running 10 --results-directory ${{ github.workspace }}/artifacts/inttestcoverage
+        dotnet run --no-build --configuration Release /bl:${{ github.workspace }}/artifacts/binlog/inttest.binlog --no-ansi --output detailed --coverage --coverage-output-format cobertura --coverage-output coverage.xml --long-running 10 --results-directory "${{ github.workspace }}/artifacts/inttestcoverage"
     
     - name: Report Integration Test Coverage
       if: inputs.runIntTests == 'true'
@@ -256,7 +256,7 @@ runs:
     
     - name: VirusTotal Monitor Scan
       if: inputs.isPrimaryBuildOs == 'true' && inputs.virusTotalApiKey != ''
-      uses: crazy-max/ghaction-virustotal@v4
+      uses: crazy-max/ghaction-virustotal@v5
       with:
         vt_api_key: ${{ inputs.virusTotalApiKey }}
         vt_monitor: true
@@ -290,14 +290,14 @@ runs:
     
     - name: store binlogs
       if: failure()
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: binlogs-${{ inputs.osName }}
         path: artifacts/binlog
     
     - name: store unit test coverage
       if: inputs.isPrimaryBuildOs == 'true'
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: unittestcoverage
         path: artifacts/unittestcoverage
@@ -305,14 +305,14 @@ runs:
     
     - name: store integration test coverage
       if: inputs.isPrimaryBuildOs == 'true' && inputs.runIntTests == 'true'
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: inttestcoverage
         path: artifacts/inttestcoverage
     
     - name: store nuget packages
       if: inputs.isPrimaryBuildOs == 'true'
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: nuget
         path: artifacts/nuget
@@ -320,28 +320,28 @@ runs:
     
     - name: store omd
       if: inputs.isPrimaryBuildOs == 'true'
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: omd
         path: artifacts/omd
     
     - name: store sbom
       if: inputs.isPrimaryBuildOs == 'true'
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: sbom
         path: artifacts/sbom
     
     - name: store outdated
       if: inputs.isPrimaryBuildOs == 'true'
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: outdated
         path: artifacts/outdated
 
     - name: store docfx
       if: inputs.isPrimaryBuildOs == 'true' && inputs.apiDocumentation == 'DocFx'
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: docfx
         path: artifacts/docfx
