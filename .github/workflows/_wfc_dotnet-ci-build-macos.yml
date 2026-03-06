@@ -29,6 +29,8 @@ on:
     secrets:
       CODECOV_TOKEN:
         required: false
+      SYNCFUSION_LICENSE_KEY:
+        required: false
 
 jobs:
   build:
@@ -68,3 +70,4 @@ jobs:
           workloads: ${{ inputs.workloads }}
           codecovToken: ${{ secrets.CODECOV_TOKEN }}
           apiDocumentation: ${{ inputs.apiDocumentation }}
+          syncfusionLicense: ${{ secrets.SYNCFUSION_LICENSE_KEY }}

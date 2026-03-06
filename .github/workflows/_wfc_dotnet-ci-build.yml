@@ -47,6 +47,8 @@ on:
         required: false
       CODECOV_TOKEN:
         required: false
+      SYNCFUSION_LICENSE_KEY:
+        required: false
     outputs:
       nbgv:
         description: 'NBGV SemVer2 version'
@@ -82,6 +84,7 @@ jobs:
       SONAR_ORGANISATION_KEY: ${{ secrets.SONAR_ORGANISATION_KEY }}
       VIRUSTOTAL_API_KEY: ${{ secrets.VIRUSTOTAL_API_KEY }}
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      SYNCFUSION_LICENSE_KEY: ${{ secrets.SYNCFUSION_LICENSE_KEY }}
 
   build-windows:
     needs: validate-inputs
@@ -100,6 +103,7 @@ jobs:
       SONAR_ORGANISATION_KEY: ${{ secrets.SONAR_ORGANISATION_KEY }}
       VIRUSTOTAL_API_KEY: ${{ secrets.VIRUSTOTAL_API_KEY }}
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      SYNCFUSION_LICENSE_KEY: ${{ secrets.SYNCFUSION_LICENSE_KEY }}
 
   build-macos:
     needs: validate-inputs
@@ -113,3 +117,4 @@ jobs:
       apiDocumentation: ${{ inputs.apiDocumentation }}
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      SYNCFUSION_LICENSE_KEY: ${{ secrets.SYNCFUSION_LICENSE_KEY }}
