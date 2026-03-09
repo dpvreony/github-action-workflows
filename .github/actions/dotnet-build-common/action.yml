@@ -244,8 +244,38 @@ runs:
       shell: pwsh
       working-directory: a/src/${{ inputs.solutionName }}.IntegrationTests
       run: |
-        dotnet run --no-build --configuration Release /bl:${{ github.workspace }}/artifacts/binlog/inttest.binlog --no-ansi --output detailed --coverage --coverage-output-format cobertura --coverage-output coverage.xml --long-running 10 --results-directory "${{ github.workspace }}/artifacts/inttestcoverage"
-    
+        $TimeoutMinutes = 10
+        $TimeoutMs = $TimeoutMinutes * 60 * 1000
+
+        $args = @(
+          "run",
+          "--no-build",
+          "--configuration",
+          "Release",
+          "/bl:${{ github.workspace }}/artifacts/binlog/inttest.binlog",
+          "--no-ansi",
+          "--output",
+          "detailed",
+          "--coverage",
+          "--coverage-output-format",
+          "cobertura",
+          "--coverage-output",
+          "coverage.xml",
+          "--long-running",
+          "10",
+          "--results-directory",
+          "${{ github.workspace }}/artifacts/inttestcoverage"
+        )
+
+        $p = Start-Process -FilePath "dotnet" -ArgumentList $args -NoNewWindow -PassThru
+
+        if (-not $p.WaitForExit($TimeoutMs)) {
+          try { $p.Kill($true) } catch { }
+          throw "Timed out after $TimeoutMinutes minute(s) running: dotnet $($args -join ' ')"
+        }
+
+        exit $p.ExitCode
+
     - name: Report Integration Test Coverage
       if: inputs.runIntTests == 'true'
       shell: pwsh
