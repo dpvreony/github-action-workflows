@@ -311,75 +311,77 @@ jobs:
     steps:
       - name: Display Release Decision Variables
         env:
+          EXPECTED_REF: refs/heads/main
+          CURRENT_REF: ${{ github.ref }}
+          CURRENT_SHA: ${{ github.sha }}
+          BRANCH_MATCHES_MAIN: ${{ 'refs/heads/main' == github.ref }}
+          RELEASE_REQUIRED: ${{ needs.check-release-required.outputs.release_required }}
           CHANGE_COMMIT_LOG: ${{ needs.build.outputs.change_commit_log }}
+          BUILD_RESULT: ${{ needs.build.result }}
+          NBGV_VERSION: ${{ needs.build.outputs.nbgv }}
+          NUGET_ENV_RESULT: ${{ needs.check-nuget-environment.result }}
+        shell: pwsh
         run: |
-          # Define constants
-          EXPECTED_REF="refs/heads/main"
-          CURRENT_REF="${{ github.ref }}"
-          RELEASE_REQUIRED="${{ needs.check-release-required.outputs.release_required }}"
-          BUILD_RESULT="${{ needs.build.result }}"
-          NUGET_ENV_RESULT="${{ needs.check-nuget-environment.result }}"
-          
-          echo "=== Release Decision Troubleshooting ==="
-          echo ""
-          echo "## Branch and Commit Information"
-          echo "github.ref: $CURRENT_REF"
-          echo "github.sha: ${{ github.sha }}"
-          echo "Expected ref for release: $EXPECTED_REF"
-          echo "Branch matches main (using release job's condition order): ${{ 'refs/heads/main' == github.ref }}"
-          echo ""
-          echo "## Release Required Check"
-          echo "release_required: $RELEASE_REQUIRED"
-          echo ""
-          echo "## Build Outputs"
-          echo "build job result: $BUILD_RESULT"
-          echo "nbgv version: ${{ needs.build.outputs.nbgv }}"
-          echo "change_commit_log length: ${#CHANGE_COMMIT_LOG} characters"
-          echo ""
-          echo "## NuGet Environment Check"
-          echo "check-nuget-environment job result: $NUGET_ENV_RESULT"
-          echo ""
-          echo "## Release Job Condition Evaluation"
-          echo "Combined condition ('refs/heads/main' == github.ref AND release_required == 'true' AND build succeeded AND NuGet environment configured):"
-          if [ "$EXPECTED_REF" == "$CURRENT_REF" ] && [ "$RELEASE_REQUIRED" == "true" ] && [ "$BUILD_RESULT" == "success" ] && [ "$NUGET_ENV_RESULT" == "success" ]; then
-            echo "✅ WILL RUN: Release job will execute"
-          else
-            echo "❌ WILL SKIP: Release job will be skipped"
-            echo ""
-            echo "Reasons:"
-            if [ "$EXPECTED_REF" != "$CURRENT_REF" ]; then
-              echo "  - Not on main branch (current: $CURRENT_REF)"
-            fi
-            if [ "$RELEASE_REQUIRED" != "true" ]; then
-              echo "  - Release not required (release_required: $RELEASE_REQUIRED)"
-            fi
-            if [ "$BUILD_RESULT" != "success" ]; then
-              echo "  - Build did not succeed (build result: $BUILD_RESULT)"
-            fi
-            if [ "$NUGET_ENV_RESULT" != "success" ]; then
-              echo "  - NuGet environment not configured or check failed (check-nuget-environment result: $NUGET_ENV_RESULT)"
-            fi
-          fi
-          echo ""
-          echo "=== End of Release Decision Troubleshooting ==="
+          Write-Host "=== Release Decision Troubleshooting ==="
+          Write-Host ""
+          Write-Host "## Branch and Commit Information"
+          Write-Host "github.ref: $env:CURRENT_REF"
+          Write-Host "github.sha: $env:CURRENT_SHA"
+          Write-Host "Expected ref for release: $env:EXPECTED_REF"
+          Write-Host "Branch matches main (using release job's condition order): $env:BRANCH_MATCHES_MAIN"
+          Write-Host ""
+          Write-Host "## Release Required Check"
+          Write-Host "release_required: $env:RELEASE_REQUIRED"
+          Write-Host ""
+          Write-Host "## Build Outputs"
+          Write-Host "build job result: $env:BUILD_RESULT"
+          Write-Host "nbgv version: $env:NBGV_VERSION"
+          Write-Host "change_commit_log length: $($env:CHANGE_COMMIT_LOG.Length) characters"
+          Write-Host ""
+          Write-Host "## NuGet Environment Check"
+          Write-Host "check-nuget-environment job result: $env:NUGET_ENV_RESULT"
+          Write-Host ""
+          Write-Host "## Release Job Condition Evaluation"
+          Write-Host "Combined condition ('refs/heads/main' == github.ref AND release_required == 'true' AND build succeeded AND NuGet environment configured):"
+          if ($env:EXPECTED_REF -eq $env:CURRENT_REF -and $env:RELEASE_REQUIRED -eq 'true' -and $env:BUILD_RESULT -eq 'success' -and $env:NUGET_ENV_RESULT -eq 'success') {
+            Write-Host "✅ WILL RUN: Release job will execute"
+          } else {
+            Write-Host "❌ WILL SKIP: Release job will be skipped"
+            Write-Host ""
+            Write-Host "Reasons:"
+            if ($env:EXPECTED_REF -ne $env:CURRENT_REF) {
+              Write-Host "  - Not on main branch (current: $env:CURRENT_REF)"
+            }
+            if ($env:RELEASE_REQUIRED -ne 'true') {
+              Write-Host "  - Release not required (release_required: $env:RELEASE_REQUIRED)"
+            }
+            if ($env:BUILD_RESULT -ne 'success') {
+              Write-Host "  - Build did not succeed (build result: $env:BUILD_RESULT)"
+            }
+            if ($env:NUGET_ENV_RESULT -ne 'success') {
+              Write-Host "  - NuGet environment not configured or check failed (check-nuget-environment result: $env:NUGET_ENV_RESULT)"
+            }
+          }
+          Write-Host ""
+          Write-Host "=== End of Release Decision Troubleshooting ==="
       
       - name: Set release output
         id: evaluate-release-condition
+        env:
+          EXPECTED_REF: refs/heads/main
+          CURRENT_REF: ${{ github.ref }}
+          RELEASE_REQUIRED: ${{ needs.check-release-required.outputs.release_required }}
+          BUILD_RESULT: ${{ needs.build.result }}
+          NUGET_ENV_RESULT: ${{ needs.check-nuget-environment.result }}
+        shell: pwsh
         run: |
-          # Evaluate the release condition
-          EXPECTED_REF="refs/heads/main"
-          CURRENT_REF="${{ github.ref }}"
-          RELEASE_REQUIRED="${{ needs.check-release-required.outputs.release_required }}"
-          BUILD_RESULT="${{ needs.build.result }}"
-          NUGET_ENV_RESULT="${{ needs.check-nuget-environment.result }}"
-          
-          if [ "$EXPECTED_REF" == "$CURRENT_REF" ] && [ "$RELEASE_REQUIRED" == "true" ] && [ "$BUILD_RESULT" == "success" ] && [ "$NUGET_ENV_RESULT" == "success" ]; then
-            echo "run_release=true" >> "$GITHUB_OUTPUT"
-            echo "::notice::Release will run"
-          else
-            echo "run_release=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::Release will be skipped"
-          fi
+          if ($env:EXPECTED_REF -eq $env:CURRENT_REF -and $env:RELEASE_REQUIRED -eq 'true' -and $env:BUILD_RESULT -eq 'success' -and $env:NUGET_ENV_RESULT -eq 'success') {
+            Add-Content -Path $env:GITHUB_OUTPUT -Value "run_release=true"
+            Write-Host "::notice::Release will run"
+          } else {
+            Add-Content -Path $env:GITHUB_OUTPUT -Value "run_release=false"
+            Write-Host "::notice::Release will be skipped"
+          }
 
   release:
     if: always() && needs.debug-release-values.outputs.run_release == 'true'
