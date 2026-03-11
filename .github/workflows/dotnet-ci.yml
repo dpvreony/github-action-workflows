@@ -12,21 +12,21 @@ on:
         type: boolean
         default: false
         description: 'If true, uses .slnx solution format instead of .sln'
-      buildOs:
+      primary-build-mode:
         required: false
         type: string
-        default: 'linux'
-        description: 'Primary OS for build and pack. Options: linux, windows. Default: linux'
+        default: 'linux-only'
+        description: 'Primary build mode. Valid values: "linux-only", "linux-primary-and-windows-secondary", "linux-secondary-and-windows-primary", "windows-only". Default: "linux-only"'
       requiresMacOS:
         required: false
         type: boolean
         default: false
         description: 'If true, also builds and tests on macOS (never releases from macOS)'
-      runIntTestsOnPrimaryOsOnly:
+      integration-test-os:
         required: false
-        type: boolean
-        default: false
-        description: 'If true, integration tests will only run on the primary build OS. Useful when integration tests only support a specific runtime (e.g., WPF on Windows).'
+        type: string
+        default: 'both'
+        description: 'Controls which OS runs integration tests when primary-build-mode is "linux-primary-and-windows-secondary" or "linux-secondary-and-windows-primary". Valid values: "both", "linux", "windows". Ignored when primary-build-mode is "linux-only" or "windows-only". Default: "both"'
       workloads:
         required: false
         type: string
@@ -63,9 +63,9 @@ jobs:
     with:
       solutionName: ${{ inputs.solutionName }}
       useSlnx: ${{ inputs.useSlnx }}
-      buildOs: ${{ inputs.buildOs }}
+      primary-build-mode: ${{ inputs['primary-build-mode'] }}
       requiresMacOS: ${{ inputs.requiresMacOS }}
-      runIntTestsOnPrimaryOsOnly: ${{ inputs.runIntTestsOnPrimaryOsOnly }}
+      integration-test-os: ${{ inputs['integration-test-os'] }}
       workloads: ${{ inputs.workloads }}
       apiDocumentation: ${{ inputs.apiDocumentation }}
     secrets:
