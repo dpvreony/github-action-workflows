@@ -311,6 +311,8 @@ jobs:
           CURRENT_REF="${{ github.ref }}"
           RELEASE_REQUIRED="${{ needs.check-release-required.outputs.release_required }}"
           CHANGE_COMMIT_LOG="${{ needs.build.outputs.change_commit_log }}"
+          BUILD_RESULT="${{ needs.build.result }}"
+          NUGET_ENV_RESULT="${{ needs.check-nuget-environment.result }}"
           
           echo "=== Release Decision Troubleshooting ==="
           echo ""
@@ -324,15 +326,16 @@ jobs:
           echo "release_required: $RELEASE_REQUIRED"
           echo ""
           echo "## Build Outputs"
+          echo "build job result: $BUILD_RESULT"
           echo "nbgv version: ${{ needs.build.outputs.nbgv }}"
           echo "change_commit_log length: ${#CHANGE_COMMIT_LOG} characters"
           echo ""
           echo "## NuGet Environment Check"
-          echo "check-nuget-environment job result: ${{ needs.check-nuget-environment.result }}"
+          echo "check-nuget-environment job result: $NUGET_ENV_RESULT"
           echo ""
           echo "## Release Job Condition Evaluation"
-          echo "Combined condition ('refs/heads/main' == github.ref AND release_required == 'true'):"
-          if [ "$EXPECTED_REF" == "$CURRENT_REF" ] && [ "$RELEASE_REQUIRED" == "true" ]; then
+          echo "Combined condition ('refs/heads/main' == github.ref AND release_required == 'true' AND build succeeded AND NuGet environment configured):"
+          if [ "$EXPECTED_REF" == "$CURRENT_REF" ] && [ "$RELEASE_REQUIRED" == "true" ] && [ "$BUILD_RESULT" == "success" ] && [ "$NUGET_ENV_RESULT" == "success" ]; then
             echo "✅ WILL RUN: Release job will execute"
           else
             echo "❌ WILL SKIP: Release job will be skipped"
@@ -343,6 +346,12 @@ jobs:
             fi
             if [ "$RELEASE_REQUIRED" != "true" ]; then
               echo "  - Release not required (release_required: $RELEASE_REQUIRED)"
+            fi
+            if [ "$BUILD_RESULT" != "success" ]; then
+              echo "  - Build did not succeed (build result: $BUILD_RESULT)"
+            fi
+            if [ "$NUGET_ENV_RESULT" != "success" ]; then
+              echo "  - NuGet environment not configured or check failed (check-nuget-environment result: $NUGET_ENV_RESULT)"
             fi
           fi
           echo ""
@@ -355,8 +364,10 @@ jobs:
           EXPECTED_REF="refs/heads/main"
           CURRENT_REF="${{ github.ref }}"
           RELEASE_REQUIRED="${{ needs.check-release-required.outputs.release_required }}"
+          BUILD_RESULT="${{ needs.build.result }}"
+          NUGET_ENV_RESULT="${{ needs.check-nuget-environment.result }}"
           
-          if [ "$EXPECTED_REF" == "$CURRENT_REF" ] && [ "$RELEASE_REQUIRED" == "true" ]; then
+          if [ "$EXPECTED_REF" == "$CURRENT_REF" ] && [ "$RELEASE_REQUIRED" == "true" ] && [ "$BUILD_RESULT" == "success" ] && [ "$NUGET_ENV_RESULT" == "success" ]; then
             echo "run_release=true" >> "$GITHUB_OUTPUT"
             echo "::notice::Release will run"
           else
