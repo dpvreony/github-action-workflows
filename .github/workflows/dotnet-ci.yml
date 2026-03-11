@@ -310,12 +310,13 @@ jobs:
       run_release: ${{ steps.evaluate-release-condition.outputs.run_release }}
     steps:
       - name: Display Release Decision Variables
+        env:
+          CHANGE_COMMIT_LOG: ${{ needs.build.outputs.change_commit_log }}
         run: |
           # Define constants
           EXPECTED_REF="refs/heads/main"
           CURRENT_REF="${{ github.ref }}"
           RELEASE_REQUIRED="${{ needs.check-release-required.outputs.release_required }}"
-          CHANGE_COMMIT_LOG="${{ needs.build.outputs.change_commit_log }}"
           BUILD_RESULT="${{ needs.build.result }}"
           NUGET_ENV_RESULT="${{ needs.check-nuget-environment.result }}"
           
