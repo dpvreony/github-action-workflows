@@ -11,6 +11,10 @@ inputs:
   isPrimaryBuildOs:
     description: 'If true, this OS will upload release artifacts'
     required: true
+  produceNugetPackages:
+    description: 'If true, NuGet packages will be produced, SBOM generated, and VirusTotal scanned'
+    required: false
+    default: 'false'
   runIntTests:
     description: 'If true, integration tests will be run'
     required: false
@@ -290,7 +294,7 @@ runs:
         }
     
     - name: Produce Nuget Packages
-      if: inputs.isPrimaryBuildOs == 'true'
+      if: inputs.isPrimaryBuildOs == 'true' && inputs.produceNugetPackages == 'true'
       shell: pwsh
       working-directory: a/src
       run: |
@@ -300,20 +304,8 @@ runs:
         $solutionExt = if ('${{ inputs.useSlnx }}' -eq 'true') { 'slnx' } else { 'sln' }
         dotnet pack "${{ inputs.solutionName }}.$solutionExt" --configuration Release --no-build /bl:${{ github.workspace }}/artifacts/binlog/pack.binlog --nologo /p:PackageOutputPath=${{ github.workspace }}/artifacts/nuget /p:ContinuousIntegrationBuild=true
     
-    - name: Check for NuGet packages
-      id: check_nuget
-      if: inputs.isPrimaryBuildOs == 'true'
-      shell: pwsh
-      run: |
-        $nupkgFiles = Get-ChildItem -Path "${{ github.workspace }}/artifacts/nuget" -Filter "*.nupkg" -ErrorAction SilentlyContinue
-        if ($nupkgFiles) {
-          "hasNugetPackages=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-        } else {
-          "hasNugetPackages=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-        }
-
     - name: Generate SBOM
-      if: inputs.isPrimaryBuildOs == 'true' && steps.check_nuget.outputs.hasNugetPackages == 'true'
+      if: inputs.isPrimaryBuildOs == 'true' && inputs.produceNugetPackages == 'true'
       shell: pwsh
       working-directory: a
       run: |
@@ -327,7 +319,7 @@ runs:
         dotnet-outdated -o ${{ github.workspace }}/artifacts/outdated/outdated.json
     
     - name: VirusTotal Monitor Scan
-      if: inputs.isPrimaryBuildOs == 'true' && inputs.virusTotalApiKey != ''
+      if: inputs.isPrimaryBuildOs == 'true' && inputs.produceNugetPackages == 'true' && inputs.virusTotalApiKey != ''
       uses: crazy-max/ghaction-virustotal@v5
       with:
         vt_api_key: ${{ inputs.virusTotalApiKey }}
@@ -383,7 +375,7 @@ runs:
         path: artifacts/inttestcoverage
     
     - name: store nuget packages
-      if: inputs.isPrimaryBuildOs == 'true'
+      if: inputs.isPrimaryBuildOs == 'true' && inputs.produceNugetPackages == 'true'
       uses: actions/upload-artifact@v7
       with:
         name: nuget
@@ -398,7 +390,7 @@ runs:
         path: artifacts/omd
     
     - name: store sbom
-      if: inputs.isPrimaryBuildOs == 'true' && steps.check_nuget.outputs.hasNugetPackages == 'true'
+      if: inputs.isPrimaryBuildOs == 'true' && inputs.produceNugetPackages == 'true'
       uses: actions/upload-artifact@v7
       with:
         name: sbom

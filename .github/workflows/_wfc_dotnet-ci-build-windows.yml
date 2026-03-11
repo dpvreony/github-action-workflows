@@ -16,6 +16,11 @@ on:
         type: boolean
         default: false
         description: 'If true, this OS will upload release artifacts (nuget packages, SBOM, etc.)'
+      produceNugetPackages:
+        required: false
+        type: boolean
+        default: false
+        description: 'If true, NuGet packages will be produced, SBOM generated, and VirusTotal scanned'
       runIntTests:
         required: false
         type: boolean
@@ -103,6 +108,7 @@ jobs:
           runIntTests: ${{ inputs.runIntTests }}
           osName: windows
           workloads: ${{ inputs.workloads }}
+          produceNugetPackages: ${{ inputs.produceNugetPackages }}
           codecovToken: ${{ secrets.CODECOV_TOKEN }}
           sonarToken: ${{ secrets.SONAR_TOKEN }}
           sonarProjectKey: ${{ secrets.SONAR_PROJECT_KEY }}

@@ -59,6 +59,10 @@ on:
 
 jobs:
   build:
+    needs: [check-nuget-user-populated, check-nuget-api-key-populated, check-nuget-trusted-publisher-valid]
+    if: always() && !cancelled()
+    permissions:
+      contents: read
     uses: ./.github/workflows/_wfc_dotnet-ci-build.yml
     with:
       solutionName: ${{ inputs.solutionName }}
@@ -68,6 +72,7 @@ jobs:
       integration-test-os: ${{ inputs['integration-test-os'] }}
       workloads: ${{ inputs.workloads }}
       apiDocumentation: ${{ inputs.apiDocumentation }}
+      produceNugetPackages: ${{ (needs.check-nuget-user-populated.outputs.has_nuget_user == 'true' && needs.check-nuget-trusted-publisher-valid.result == 'success') || needs.check-nuget-api-key-populated.outputs.has_api_key == 'true' }}
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
