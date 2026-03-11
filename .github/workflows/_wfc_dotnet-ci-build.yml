@@ -15,7 +15,7 @@ on:
         required: false
         type: string
         default: 'linux-only'
-        description: 'Primary build mode. Valid values: "linux-only", "linux-and-windows", "windows-only". Default: "linux-only"'
+        description: 'Primary build mode. Valid values: "linux-only", "linux-primary-and-windows-secondary", "linux-secondary-and-windows-primary", "windows-only". Default: "linux-only"'
       requiresMacOS:
         required: false
         type: boolean
@@ -25,7 +25,7 @@ on:
         required: false
         type: string
         default: 'both'
-        description: 'Controls which OS runs integration tests when primary-build-mode is "linux-and-windows". Valid values: "both", "linux", "windows". Ignored when primary-build-mode is "linux-only" or "windows-only". Default: "both"'
+        description: 'Controls which OS runs integration tests when primary-build-mode is "linux-primary-and-windows-secondary" or "linux-secondary-and-windows-primary". Valid values: "both", "linux", "windows". Ignored when primary-build-mode is "linux-only" or "windows-only". Default: "both"'
       workloads:
         required: false
         type: string
@@ -63,8 +63,8 @@ jobs:
     steps:
       - name: Validate primary-build-mode input
         run: |
-          if [[ "${{ inputs['primary-build-mode'] }}" != "linux-only" && "${{ inputs['primary-build-mode'] }}" != "linux-and-windows" && "${{ inputs['primary-build-mode'] }}" != "windows-only" ]]; then
-            echo "::error::Invalid primary-build-mode value '${{ inputs['primary-build-mode'] }}'. Valid values are 'linux-only', 'linux-and-windows', or 'windows-only'."
+          if [[ "${{ inputs['primary-build-mode'] }}" != "linux-only" && "${{ inputs['primary-build-mode'] }}" != "linux-primary-and-windows-secondary" && "${{ inputs['primary-build-mode'] }}" != "linux-secondary-and-windows-primary" && "${{ inputs['primary-build-mode'] }}" != "windows-only" ]]; then
+            echo "::error::Invalid primary-build-mode value '${{ inputs['primary-build-mode'] }}'. Valid values are 'linux-only', 'linux-primary-and-windows-secondary', 'linux-secondary-and-windows-primary', or 'windows-only'."
             exit 1
           fi
       - name: Validate integration-test-os input
@@ -76,12 +76,12 @@ jobs:
 
   build-linux:
     needs: validate-inputs
-    if: inputs['primary-build-mode'] == 'linux-only' || inputs['primary-build-mode'] == 'linux-and-windows'
+    if: inputs['primary-build-mode'] == 'linux-only' || inputs['primary-build-mode'] == 'linux-primary-and-windows-secondary' || inputs['primary-build-mode'] == 'linux-secondary-and-windows-primary'
     uses: ./.github/workflows/_wfc_dotnet-ci-build-linux.yml
     with:
       solutionName: ${{ inputs.solutionName }}
       useSlnx: ${{ inputs.useSlnx }}
-      isPrimaryBuildOs: true
+      isPrimaryBuildOs: ${{ inputs['primary-build-mode'] == 'linux-only' || inputs['primary-build-mode'] == 'linux-primary-and-windows-secondary' }}
       runIntTests: ${{ inputs['primary-build-mode'] == 'linux-only' || inputs['integration-test-os'] == 'both' || inputs['integration-test-os'] == 'linux' }}
       workloads: ${{ inputs.workloads }}
       apiDocumentation: ${{ inputs.apiDocumentation }}
@@ -95,12 +95,12 @@ jobs:
 
   build-windows:
     needs: validate-inputs
-    if: inputs['primary-build-mode'] == 'windows-only' || inputs['primary-build-mode'] == 'linux-and-windows'
+    if: inputs['primary-build-mode'] == 'windows-only' || inputs['primary-build-mode'] == 'linux-primary-and-windows-secondary' || inputs['primary-build-mode'] == 'linux-secondary-and-windows-primary'
     uses: ./.github/workflows/_wfc_dotnet-ci-build-windows.yml
     with:
       solutionName: ${{ inputs.solutionName }}
       useSlnx: ${{ inputs.useSlnx }}
-      isPrimaryBuildOs: ${{ inputs['primary-build-mode'] == 'windows-only' }}
+      isPrimaryBuildOs: ${{ inputs['primary-build-mode'] == 'windows-only' || inputs['primary-build-mode'] == 'linux-secondary-and-windows-primary' }}
       runIntTests: ${{ inputs['primary-build-mode'] == 'windows-only' || inputs['integration-test-os'] == 'both' || inputs['integration-test-os'] == 'windows' }}
       workloads: ${{ inputs.workloads }}
       apiDocumentation: ${{ inputs.apiDocumentation }}

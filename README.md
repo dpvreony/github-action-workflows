@@ -13,9 +13,9 @@ This repository contains a reusable GitHub Actions workflow for building, analyz
 |-------|----------|------|---------|-------------|
 | `solutionName` | **Yes** | `string` | — | Name of the solution file **without** the extension (e.g., `MySolution` not `MySolution.sln`). This value is also used to derive the paths for unit tests (`{solutionName}.UnitTests`), integration tests (`{solutionName}.IntegrationTests`), and benchmarks (`{solutionName}.Benchmarks`). |
 | `useSlnx` | No | `boolean` | `false` | When set to `true`, uses the new `.slnx` XML-based solution format instead of the traditional `.sln` format. The `.slnx` format is a simplified, XML-based solution file format introduced in .NET 9. |
-| `primary-build-mode` | No | `string` | `linux-only` | Specifies the primary build mode. Valid values: `linux-only`, `linux-and-windows`, `windows-only`. Controls which OS(es) run the build, and which OS generates release artifacts (NuGet packages, SBOM, etc.). |
+| `primary-build-mode` | No | `string` | `linux-only` | Specifies the primary build mode. Valid values: `linux-only`, `linux-primary-and-windows-secondary`, `linux-secondary-and-windows-primary`, `windows-only`. Controls which OS(es) run the build, and which OS generates release artifacts (NuGet packages, SBOM, etc.). |
 | `requiresMacOS` | No | `boolean` | `false` | When set to `true`, enables additional build and test execution on macOS. Note: macOS builds are for validation only and never generate release artifacts. Useful for ensuring cross-platform compatibility. |
-| `integration-test-os` | No | `string` | `both` | Controls which OS runs integration tests when `primary-build-mode` is `linux-and-windows`. Valid values: `both`, `linux`, `windows`. Ignored when `primary-build-mode` is `linux-only` or `windows-only`. Useful when integration tests only support a specific runtime, such as WPF binaries that only work on Windows. |
+| `integration-test-os` | No | `string` | `both` | Controls which OS runs integration tests when `primary-build-mode` is `linux-primary-and-windows-secondary` or `linux-secondary-and-windows-primary`. Valid values: `both`, `linux`, `windows`. Ignored when `primary-build-mode` is `linux-only` or `windows-only`. Useful when integration tests only support a specific runtime, such as WPF binaries that only work on Windows. |
 | `workloads` | No | `string` | `''` (empty) | Comma-separated list of .NET workloads to install before building (e.g., `"android,aspire,maui"`). When empty, no workloads are installed. Common workloads include: `android`, `aspire`, `ios`, `tvos`, `macos`, `maui`, `wasm-tools`. Note: Some workloads are platform-specific (e.g., `ios`, `tvos`, `macos`, and `maui` are not supported on Linux). |
 
 ### Secrets
@@ -35,13 +35,15 @@ This repository contains a reusable GitHub Actions workflow for building, analyz
 The workflow supports building and testing on multiple operating systems:
 
 - **Linux only (default):** The default primary build mode. Linux is the primary OS for building, packing, and testing. All release artifacts are generated on Linux.
-- **Linux and Windows:** Both Linux and Windows build and test. Linux is the primary OS and generates release artifacts. Use `primary-build-mode: linux-and-windows`.
+- **Linux primary, Windows secondary:** Both Linux and Windows build and test. Linux is the primary OS and generates release artifacts. Use `primary-build-mode: linux-primary-and-windows-secondary`.
+- **Linux secondary, Windows primary:** Both Linux and Windows build and test. Windows is the primary OS and generates release artifacts. Use this when Windows platform-specific builds produce artifacts that can't run on Linux (e.g., .NET Framework, WPF, Windows-native dependencies). Use `primary-build-mode: linux-secondary-and-windows-primary`.
 - **Windows only:** Windows is the sole and primary OS for building, packing, and testing. Use `primary-build-mode: windows-only`.
 - **macOS (optional):** Can be enabled for additional build and test coverage regardless of `primary-build-mode`. macOS builds never generate release artifacts. Enable with `requiresMacOS: true`.
 
 **Key behaviors:**
 - Only the **primary OS** generates and uploads release artifacts (NuGet packages, SBOM, etc.)
-- In `linux-and-windows` mode, Linux is always primary and generates release artifacts
+- In `linux-primary-and-windows-secondary` mode, Linux generates release artifacts
+- In `linux-secondary-and-windows-primary` mode, Windows generates release artifacts
 - macOS builds, when enabled, only build and test - they never pack or release
 - Test coverage is uploaded only from the primary OS
 - Binlog artifacts are OS-specific and include the OS name in the artifact name
@@ -192,12 +194,20 @@ with:
   primary-build-mode: windows-only
 ```
 
-**Linux and Windows builds:**
+**Linux primary, Windows secondary (cross-platform build, Linux publishes):**
 ```yaml
 uses: dpvreony/github-action-workflows/.github/workflows/dotnet-ci.yml@main
 with:
   solutionName: MySolution
-  primary-build-mode: linux-and-windows
+  primary-build-mode: linux-primary-and-windows-secondary
+```
+
+**Linux secondary, Windows primary (Windows-platform build, Windows publishes):**
+```yaml
+uses: dpvreony/github-action-workflows/.github/workflows/dotnet-ci.yml@main
+with:
+  solutionName: MySolution
+  primary-build-mode: linux-secondary-and-windows-primary
 ```
 
 **Linux-only with additional macOS builds:**
@@ -217,12 +227,12 @@ with:
   requiresMacOS: true
 ```
 
-**Windows-only integration tests (e.g., WPF projects) with linux-and-windows build:**
+**Windows-only integration tests (e.g., WPF projects) with linux-primary-and-windows-secondary build:**
 ```yaml
 uses: dpvreony/github-action-workflows/.github/workflows/dotnet-ci.yml@main
 with:
   solutionName: MySolution
-  primary-build-mode: linux-and-windows
+  primary-build-mode: linux-primary-and-windows-secondary
   integration-test-os: windows  # Integration tests only run on Windows
 ```
 
@@ -284,7 +294,7 @@ jobs:
       useSlnx: false                    # Optional: use .slnx format (default: false)
       primary-build-mode: linux-only    # Optional: build mode (default: linux-only)
       requiresMacOS: false              # Optional: enable macOS builds (default: false)
-      integration-test-os: both        # Optional: OS for integration tests when linux-and-windows (default: both)
+      integration-test-os: both        # Optional: OS for integration tests when linux-primary-and-windows-secondary or linux-secondary-and-windows-primary (default: both)
       workloads: ""                     # Optional: comma-separated workloads (default: empty)
     secrets:
       NUGET_USER: ${{ secrets.NUGET_USER }}                       # For Trusted Publishers (OIDC)

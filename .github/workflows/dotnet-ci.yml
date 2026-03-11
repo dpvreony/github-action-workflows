@@ -16,7 +16,7 @@ on:
         required: false
         type: string
         default: 'linux-only'
-        description: 'Primary build mode. Valid values: "linux-only", "linux-and-windows", "windows-only". Default: "linux-only"'
+        description: 'Primary build mode. Valid values: "linux-only", "linux-primary-and-windows-secondary", "linux-secondary-and-windows-primary", "windows-only". Default: "linux-only"'
       requiresMacOS:
         required: false
         type: boolean
@@ -26,7 +26,7 @@ on:
         required: false
         type: string
         default: 'both'
-        description: 'Controls which OS runs integration tests when primary-build-mode is "linux-and-windows". Valid values: "both", "linux", "windows". Ignored when primary-build-mode is "linux-only" or "windows-only". Default: "both"'
+        description: 'Controls which OS runs integration tests when primary-build-mode is "linux-primary-and-windows-secondary" or "linux-secondary-and-windows-primary". Valid values: "both", "linux", "windows". Ignored when primary-build-mode is "linux-only" or "windows-only". Default: "both"'
       workloads:
         required: false
         type: string
