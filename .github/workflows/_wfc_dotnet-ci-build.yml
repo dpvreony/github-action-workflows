@@ -36,6 +36,11 @@ on:
         type: string
         default: 'DocFx'
         description: 'API Documentation generation tool. Set to "DocFx" to enable DocFX metadata generation, or any other value to disable it.'
+      produceNugetPackages:
+        required: false
+        type: boolean
+        default: false
+        description: 'If true, NuGet packages will be produced, SBOM generated, and VirusTotal scanned'
     secrets:
       SONAR_TOKEN:
         required: false
@@ -85,6 +90,7 @@ jobs:
       runIntTests: ${{ inputs['primary-build-mode'] == 'linux-only' || inputs['integration-test-os'] == 'both' || inputs['integration-test-os'] == 'linux' }}
       workloads: ${{ inputs.workloads }}
       apiDocumentation: ${{ inputs.apiDocumentation }}
+      produceNugetPackages: ${{ inputs.produceNugetPackages }}
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
@@ -104,6 +110,7 @@ jobs:
       runIntTests: ${{ inputs['primary-build-mode'] == 'windows-only' || inputs['integration-test-os'] == 'both' || inputs['integration-test-os'] == 'windows' }}
       workloads: ${{ inputs.workloads }}
       apiDocumentation: ${{ inputs.apiDocumentation }}
+      produceNugetPackages: ${{ inputs.produceNugetPackages }}
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
