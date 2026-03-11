@@ -24,7 +24,7 @@ jobs:
     uses: ./.github/workflows/dotnet-ci.yml
     with:
       solutionName: "Workflow"
-      buildOs: "windows"
+      primary-build-mode: "windows-only"
       workloads: "android,aspire,ios,tvos,macos,maui"
       apiDocumentation: "DocFx"
 
