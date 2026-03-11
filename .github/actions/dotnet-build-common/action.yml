@@ -300,8 +300,20 @@ runs:
         $solutionExt = if ('${{ inputs.useSlnx }}' -eq 'true') { 'slnx' } else { 'sln' }
         dotnet pack "${{ inputs.solutionName }}.$solutionExt" --configuration Release --no-build /bl:${{ github.workspace }}/artifacts/binlog/pack.binlog --nologo /p:PackageOutputPath=${{ github.workspace }}/artifacts/nuget /p:ContinuousIntegrationBuild=true
     
-    - name: Generate SBOM
+    - name: Check for NuGet packages
+      id: check_nuget
       if: inputs.isPrimaryBuildOs == 'true'
+      shell: pwsh
+      run: |
+        $nupkgFiles = Get-ChildItem -Path "${{ github.workspace }}/artifacts/nuget" -Filter "*.nupkg" -ErrorAction SilentlyContinue
+        if ($nupkgFiles) {
+          "hasNugetPackages=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+        } else {
+          "hasNugetPackages=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+        }
+
+    - name: Generate SBOM
+      if: inputs.isPrimaryBuildOs == 'true' && steps.check_nuget.outputs.hasNugetPackages == 'true'
       shell: pwsh
       working-directory: a
       run: |
@@ -386,7 +398,7 @@ runs:
         path: artifacts/omd
     
     - name: store sbom
-      if: inputs.isPrimaryBuildOs == 'true'
+      if: inputs.isPrimaryBuildOs == 'true' && steps.check_nuget.outputs.hasNugetPackages == 'true'
       uses: actions/upload-artifact@v7
       with:
         name: sbom
