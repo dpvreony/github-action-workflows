@@ -49,8 +49,9 @@ jobs:
         mkdir -p artifacts/snitch
 
     - name: run snitch
+      shell: pwsh
       run: |
-        dotnet snitch ${{ github.workspace }}/a/src/${{ env.solutionpath }} > ${{ github.workspace }}/artifacts/snitch/snitch.txt
+        dotnet snitch "${{ github.workspace }}/a/src/${{ env.solutionpath }}" | Tee-Object -FilePath "${{ github.workspace }}/artifacts/snitch/snitch.txt"
       working-directory:
         github-action-workflows/eng/snitch
 
