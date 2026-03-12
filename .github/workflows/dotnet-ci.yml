@@ -225,7 +225,7 @@ jobs:
             exit 1
           fi
      
-  check-nuget-environment:
+  check-release-environment:
     permissions:
       actions: read
       contents: read
@@ -431,8 +431,11 @@ jobs:
           }
 
   release:
-    if: always() && needs.debug-release-values.outputs.run_release == 'true'
-    needs: [build, check-release-required, debug-release-values, check-nuget-user-populated, check-nuget-api-key-populated, check-publish-targets]
+    if: |
+      always() &&
+      needs.debug-release-values.outputs.run_release == 'true' &&
+      needs.check-release-environment.result == 'success'
+    needs: [build, check-release-required, debug-release-values, check-nuget-user-populated, check-nuget-api-key-populated, check-publish-targets, check-release-environment]
     permissions:
       contents: write
       pages: write
