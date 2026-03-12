@@ -274,9 +274,11 @@ jobs:
               publish) has_publish=true ;;
             esac
           done
-          echo "has_nuget=$has_nuget" >> "$GITHUB_OUTPUT"
-          echo "has_actions=$has_actions" >> "$GITHUB_OUTPUT"
-          echo "has_publish=$has_publish" >> "$GITHUB_OUTPUT"
+          {
+            echo "has_nuget=$has_nuget"
+            echo "has_actions=$has_actions"
+            echo "has_publish=$has_publish"
+          } >> "$GITHUB_OUTPUT"
           echo "::notice::Publish targets - nuget: $has_nuget, actions: $has_actions, publish: $has_publish"
 
   check-release-required:
