@@ -432,173 +432,20 @@ jobs:
 
   release:
     if: always() && needs.debug-release-values.outputs.run_release == 'true'
+    needs: [build, check-release-required, debug-release-values, check-nuget-user-populated, check-nuget-api-key-populated, check-publish-targets]
     permissions:
       contents: write
       pages: write
       id-token: write
       actions: write
-    runs-on: ubuntu-latest
-    needs: [build, check-release-required, debug-release-values, check-nuget-user-populated, check-nuget-api-key-populated, check-publish-targets]
-    environment:
-      name: release
-    env:
-      DOTNET_CLI_TELEMETRY_OPTOUT: 1
-      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
-      DOTNET_NOLOGO: true
-      DOTNET_GENERATE_ASPNET_CERTIFICATE: false
-    steps:
-    - name: Cancel old pending releases
-      env:
-        GH_TOKEN: ${{ github.token }}
-      run: |
-        # Get the current version and SHA
-        CURRENT_VERSION="${{ needs.build.outputs.nbgv }}"
-        CURRENT_SHA="${{ github.sha }}"
-        CURRENT_RUN_ID="${{ github.run_id }}"
-        
-        echo "Current release: $CURRENT_VERSION (SHA: $CURRENT_SHA, Run ID: $CURRENT_RUN_ID)"
-        
-        # Get all workflow runs that are waiting for approval on the release environment
-        # Filter for runs on the default branch that are in 'waiting' status
-        pending_runs=$(gh api \
-          -H "Accept: application/vnd.github+json" \
-          -H "X-GitHub-Api-Version: 2022-11-28" \
-          "/repos/${{ github.repository }}/actions/runs?status=waiting&branch=${{ github.event.repository.default_branch }}" \
-          --jq '.workflow_runs[] | select(.id != '$CURRENT_RUN_ID') | .id')
-        
-        if [ -z "$pending_runs" ]; then
-          echo "No pending workflow runs found to cancel"
-          exit 0
-        fi
-        
-        echo "Found pending workflow runs to check: $pending_runs"
-        
-        # For each pending run, check if it has pending deployments for the release environment
-        for run_id in $pending_runs; do
-          echo "Checking run $run_id for pending deployments..."
-          
-          # Get pending deployments for this run
-          pending_deployments=$(gh api \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            "/repos/${{ github.repository }}/actions/runs/$run_id/pending_deployments" \
-            --jq '.[] | select(.environment.name == "release") | .environment.id' 2>/dev/null || echo "")
-          
-          if [ -n "$pending_deployments" ]; then
-            echo "Found pending deployment for release environment in run $run_id"
-            
-            # Reject the pending deployment
-            for env_id in $pending_deployments; do
-              echo "Rejecting deployment for environment $env_id in run $run_id"
-              
-              gh api \
-                --method POST \
-                -H "Accept: application/vnd.github+json" \
-                -H "X-GitHub-Api-Version: 2022-11-28" \
-                "/repos/${{ github.repository }}/actions/runs/$run_id/pending_deployments" \
-                -f "environment_ids[]=$env_id" \
-                -f "state=rejected" \
-                -f "comment=Superseded by release $CURRENT_VERSION (SHA: $CURRENT_SHA) from run $CURRENT_RUN_ID" \
-                && echo "Successfully rejected deployment in run $run_id" \
-                || echo "Failed to reject deployment in run $run_id"
-            done
-          else
-            echo "No pending release deployment found for run $run_id"
-          fi
-        done
-        
-        echo "Finished canceling old pending releases"
-    
-    - name: Download NuGet Packages
-      if: needs.check-publish-targets.outputs.has_nuget == 'true'
-      uses: actions/download-artifact@v8
-      with:
-        name: nuget
-        path: ${{ github.workspace }}/nuget
-    
-    - name: Download DocFX Artifact
-      if: inputs.apiDocumentation == 'DocFx'
-      uses: actions/download-artifact@v8
-      with:
-        name: docfx
-        path: ${{ github.workspace }}/docfx
-    
-    - name: Create docfx-metadata.zip
-      if: inputs.apiDocumentation == 'DocFx'
-      shell: pwsh
-      run: |
-        $docfxPath = "${{ github.workspace }}/docfx"
-        $zipPath = "${{ github.workspace }}/docfx-metadata.zip"
-        
-        if (Test-Path $docfxPath) {
-          Compress-Archive -Path "$docfxPath/*" -DestinationPath $zipPath -CompressionLevel Optimal
-          Write-Output "::notice::Created docfx-metadata.zip with contents from docfx artifact"
-        } else {
-          Write-Output "::warning::DocFX artifact path not found, skipping zip creation"
-        }
-    
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
-      with:
-          tag_name: ${{ needs.build.outputs.nbgv }}
-          release_name: ${{ needs.build.outputs.nbgv }}
-          body: |
-            ${{ needs.build.outputs.change_commit_log }}
-          draft: true
-    
-    - name: Upload DocFX Metadata to Release
-      if: inputs.apiDocumentation == 'DocFx'
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${{ github.workspace }}/docfx-metadata.zip
-        asset_name: docfx-metadata.zip
-        asset_content_type: application/zip
-
-    - name: Publish Release
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        set -e
-        # Publish the draft release
-        if gh release edit "${{ needs.build.outputs.nbgv }}" --repo "${{ github.repository }}" --draft=false; then
-          echo "::notice::Successfully published release ${{ needs.build.outputs.nbgv }}"
-        else
-          echo "::error::Failed to publish release ${{ needs.build.outputs.nbgv }}"
-          exit 1
-        fi
-
-    - name: NuGet login (OIDC → temp API key)
-      uses: NuGet/login@v1
-      if: needs.check-publish-targets.outputs.has_nuget == 'true' && needs.check-nuget-user-populated.outputs.has_nuget_user == 'true'
-      id: nuget-login
-      with:
-        user: ${{ secrets.NUGET_USER }}
-    
-    - name: NuGet Push (Trusted Publisher)
-      if: needs.check-publish-targets.outputs.has_nuget == 'true' && needs.check-nuget-user-populated.outputs.has_nuget_user == 'true'
-      env:
-        NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
-        SOURCE_URL: https://api.nuget.org/v3/index.json
-      working-directory: nuget
-      run: |
-        echo "::notice::Using Trusted Publishers (OIDC) for NuGet push..."
-        for package in *.nupkg; do
-          dotnet nuget push -s "$SOURCE_URL" -k "$NUGET_API_KEY" "$package"
-        done
-
-    - name: NuGet Push (API_KEY)
-      env:
-        NUGET_AUTH_TOKEN: ${{ secrets.NUGET_API_KEY }}
-        SOURCE_URL: https://api.nuget.org/v3/index.json
-      if: needs.check-publish-targets.outputs.has_nuget == 'true' && needs.check-nuget-api-key-populated.outputs.has_api_key == 'true'
-      working-directory: nuget
-      run: |
-        for package in *.nupkg; do
-          dotnet nuget push -s "$SOURCE_URL" -k "$NUGET_AUTH_TOKEN" "$package"
-        done
+    uses: ./.github/workflows/_wfc_dotnet-ci-release.yml
+    with:
+      nbgv: ${{ needs.build.outputs.nbgv }}
+      change_commit_log: ${{ needs.build.outputs.change_commit_log }}
+      has_nuget: ${{ needs.check-publish-targets.outputs.has_nuget }}
+      has_nuget_user: ${{ needs.check-nuget-user-populated.outputs.has_nuget_user }}
+      has_api_key: ${{ needs.check-nuget-api-key-populated.outputs.has_api_key }}
+      apiDocumentation: ${{ inputs.apiDocumentation }}
+    secrets:
+      NUGET_USER: ${{ secrets.NUGET_USER }}
+      NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
