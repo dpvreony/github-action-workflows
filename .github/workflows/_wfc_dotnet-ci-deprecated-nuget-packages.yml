@@ -58,9 +58,9 @@ jobs:
         dotnet restore ${{ env.solutionpath }} -- /bl:artifacts\binlog\restore.binlog
       working-directory: a/src
 
-    - name: List vulnerable packages
+    - name: List deprecated packages
       run: |
-        dotnet list package --deprecated --format json --include-transitive >> ${{ github.workspace }}/artifacts/nuget-deprecated/output.json
+        dotnet list package --deprecated --format json --include-transitive | Tee-Object -FilePath "${{ github.workspace }}/artifacts/nuget-deprecated/output.json"
       working-directory:
         a/src
 
