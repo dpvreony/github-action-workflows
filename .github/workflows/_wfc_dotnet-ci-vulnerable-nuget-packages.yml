@@ -59,8 +59,9 @@ jobs:
       working-directory: a/src
 
     - name: List vulnerable packages
+      shell: pwsh
       run: |
-        dotnet list package --vulnerable --format json --include-transitive >> ${{ github.workspace }}/artifacts/nuget-vulnerable/output.json
+        dotnet list package --vulnerable --format json --include-transitive | Tee-Object -FilePath "${{ github.workspace }}/artifacts/nuget-vulnerable/output.json"
       working-directory:
         a/src
 
