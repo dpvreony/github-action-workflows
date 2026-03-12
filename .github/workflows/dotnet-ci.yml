@@ -434,7 +434,7 @@ jobs:
     if: |
       always() &&
       needs.debug-release-values.outputs.run_release == 'true' &&
-      (needs.check-release-environment.result == 'success' || needs.check-release-environment.result == 'skipped')
+      needs.check-release-environment.result == 'success'
     needs: [build, check-release-required, debug-release-values, check-nuget-user-populated, check-nuget-api-key-populated, check-publish-targets, check-release-environment]
     permissions:
       contents: write
