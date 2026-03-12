@@ -340,95 +340,19 @@ jobs:
           fi
 
   debug-release-values:
-    runs-on: ubuntu-latest
     needs: [build, check-release-required, check-publish-targets]
     if: always()
     permissions:
       contents: read
-    outputs:
-      run_release: ${{ steps.evaluate-release-condition.outputs.run_release }}
-    steps:
-      - name: Display Release Decision Variables
-        env:
-          EXPECTED_REF: refs/heads/main
-          CURRENT_REF: ${{ github.ref }}
-          CURRENT_SHA: ${{ github.sha }}
-          BRANCH_MATCHES_MAIN: ${{ 'refs/heads/main' == github.ref }}
-          RELEASE_REQUIRED: ${{ needs.check-release-required.outputs.release_required }}
-          CHANGE_COMMIT_LOG: ${{ needs.build.outputs.change_commit_log }}
-          BUILD_RESULT: ${{ needs.build.result }}
-          NBGV_VERSION: ${{ needs.build.outputs.nbgv }}
-          HAS_NUGET: ${{ needs.check-publish-targets.outputs.has_nuget }}
-          HAS_ACTIONS: ${{ needs.check-publish-targets.outputs.has_actions }}
-          HAS_PUBLISH: ${{ needs.check-publish-targets.outputs.has_publish }}
-        shell: pwsh
-        run: |
-          Write-Host "=== Release Decision Troubleshooting ==="
-          Write-Host ""
-          Write-Host "## Branch and Commit Information"
-          Write-Host "github.ref: $env:CURRENT_REF"
-          Write-Host "github.sha: $env:CURRENT_SHA"
-          Write-Host "Expected ref for release: $env:EXPECTED_REF"
-          Write-Host "Branch matches main (using release job's condition order): $env:BRANCH_MATCHES_MAIN"
-          Write-Host ""
-          Write-Host "## Release Required Check"
-          Write-Host "release_required: $env:RELEASE_REQUIRED"
-          Write-Host ""
-          Write-Host "## Build Outputs"
-          Write-Host "build job result: $env:BUILD_RESULT"
-          Write-Host "nbgv version: $env:NBGV_VERSION"
-          Write-Host "change_commit_log length: $($env:CHANGE_COMMIT_LOG.Length) characters"
-          Write-Host ""
-          Write-Host "## Publish Targets"
-          Write-Host "has_nuget: $env:HAS_NUGET"
-          Write-Host "has_actions: $env:HAS_ACTIONS"
-          Write-Host "has_publish: $env:HAS_PUBLISH"
-          Write-Host ""
-          Write-Host "## Release Job Condition Evaluation"
-          $baseCondition = $env:EXPECTED_REF -eq $env:CURRENT_REF -and $env:RELEASE_REQUIRED -eq 'true' -and $env:BUILD_RESULT -eq 'success'
-          $runRelease = $baseCondition -and ($env:HAS_NUGET -eq 'true' -or $env:HAS_ACTIONS -eq 'true')
-          Write-Host "Release condition (main branch AND release required AND build succeeded AND (nuget OR actions in publish-targets)):"
-          if ($runRelease) {
-            Write-Host "✅ WILL RUN: Release job will execute"
-          } else {
-            Write-Host "❌ WILL SKIP: Release job will be skipped"
-            Write-Host ""
-            Write-Host "Reasons:"
-            if ($env:EXPECTED_REF -ne $env:CURRENT_REF) {
-              Write-Host "  - Not on main branch (current: $env:CURRENT_REF)"
-            }
-            if ($env:RELEASE_REQUIRED -ne 'true') {
-              Write-Host "  - Release not required (release_required: $env:RELEASE_REQUIRED)"
-            }
-            if ($env:BUILD_RESULT -ne 'success') {
-              Write-Host "  - Build did not succeed (build result: $env:BUILD_RESULT)"
-            }
-            if ($env:HAS_NUGET -ne 'true' -and $env:HAS_ACTIONS -ne 'true') {
-              Write-Host "  - Neither 'nuget' nor 'actions' in publish-targets"
-            }
-          }
-          Write-Host ""
-          Write-Host "=== End of Release Decision Troubleshooting ==="
-      
-      - name: Set release output
-        id: evaluate-release-condition
-        env:
-          EXPECTED_REF: refs/heads/main
-          CURRENT_REF: ${{ github.ref }}
-          RELEASE_REQUIRED: ${{ needs.check-release-required.outputs.release_required }}
-          BUILD_RESULT: ${{ needs.build.result }}
-          HAS_NUGET: ${{ needs.check-publish-targets.outputs.has_nuget }}
-          HAS_ACTIONS: ${{ needs.check-publish-targets.outputs.has_actions }}
-        shell: pwsh
-        run: |
-          $baseCondition = $env:EXPECTED_REF -eq $env:CURRENT_REF -and $env:RELEASE_REQUIRED -eq 'true' -and $env:BUILD_RESULT -eq 'success'
-          $runRelease = $baseCondition -and ($env:HAS_NUGET -eq 'true' -or $env:HAS_ACTIONS -eq 'true')
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "run_release=$($runRelease.ToString().ToLower())"
-          if ($runRelease) {
-            Write-Host "::notice::Release will run"
-          } else {
-            Write-Host "::notice::Release will be skipped"
-          }
+    uses: ./.github/workflows/_wfc_dotnet-ci-debug-release-values.yml
+    with:
+      build_result: ${{ needs.build.result }}
+      nbgv: ${{ needs.build.outputs.nbgv }}
+      change_commit_log: ${{ needs.build.outputs.change_commit_log }}
+      release_required: ${{ needs.check-release-required.outputs.release_required }}
+      has_nuget: ${{ needs.check-publish-targets.outputs.has_nuget }}
+      has_actions: ${{ needs.check-publish-targets.outputs.has_actions }}
+      has_publish: ${{ needs.check-publish-targets.outputs.has_publish }}
 
   release:
     if: |
