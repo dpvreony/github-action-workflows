@@ -339,13 +339,12 @@ jobs:
 
   debug-release-values:
     runs-on: ubuntu-latest
-    needs: [build, check-nuget-environment, check-release-required, check-publish-targets]
+    needs: [build, check-release-required, check-publish-targets]
     if: always()
     permissions:
       contents: read
     outputs:
       run_release: ${{ steps.evaluate-release-condition.outputs.run_release }}
-      run_release_actions: ${{ steps.evaluate-release-condition.outputs.run_release_actions }}
     steps:
       - name: Display Release Decision Variables
         env:
@@ -357,7 +356,6 @@ jobs:
           CHANGE_COMMIT_LOG: ${{ needs.build.outputs.change_commit_log }}
           BUILD_RESULT: ${{ needs.build.result }}
           NBGV_VERSION: ${{ needs.build.outputs.nbgv }}
-          NUGET_ENV_RESULT: ${{ needs.check-nuget-environment.result }}
           HAS_NUGET: ${{ needs.check-publish-targets.outputs.has_nuget }}
           HAS_ACTIONS: ${{ needs.check-publish-targets.outputs.has_actions }}
           HAS_PUBLISH: ${{ needs.check-publish-targets.outputs.has_publish }}
@@ -384,18 +382,14 @@ jobs:
           Write-Host "has_actions: $env:HAS_ACTIONS"
           Write-Host "has_publish: $env:HAS_PUBLISH"
           Write-Host ""
-          Write-Host "## NuGet Environment Check"
-          Write-Host "check-nuget-environment job result: $env:NUGET_ENV_RESULT"
-          Write-Host ""
           Write-Host "## Release Job Condition Evaluation"
           $baseCondition = $env:EXPECTED_REF -eq $env:CURRENT_REF -and $env:RELEASE_REQUIRED -eq 'true' -and $env:BUILD_RESULT -eq 'success'
-          $runRelease = $baseCondition -and $env:NUGET_ENV_RESULT -eq 'success' -and $env:HAS_NUGET -eq 'true'
-          $runReleaseActions = $baseCondition -and $env:HAS_ACTIONS -eq 'true' -and $env:HAS_NUGET -ne 'true'
-          Write-Host "NuGet release condition (main branch AND release required AND build succeeded AND NuGet environment configured AND nuget in publish-targets):"
+          $runRelease = $baseCondition -and ($env:HAS_NUGET -eq 'true' -or $env:HAS_ACTIONS -eq 'true')
+          Write-Host "Release condition (main branch AND release required AND build succeeded AND (nuget OR actions in publish-targets)):"
           if ($runRelease) {
-            Write-Host "✅ WILL RUN: NuGet release job will execute"
+            Write-Host "✅ WILL RUN: Release job will execute"
           } else {
-            Write-Host "❌ WILL SKIP: NuGet release job will be skipped"
+            Write-Host "❌ WILL SKIP: Release job will be skipped"
             Write-Host ""
             Write-Host "Reasons:"
             if ($env:EXPECTED_REF -ne $env:CURRENT_REF) {
@@ -407,24 +401,8 @@ jobs:
             if ($env:BUILD_RESULT -ne 'success') {
               Write-Host "  - Build did not succeed (build result: $env:BUILD_RESULT)"
             }
-            if ($env:NUGET_ENV_RESULT -ne 'success') {
-              Write-Host "  - NuGet environment not configured or check failed (check-nuget-environment result: $env:NUGET_ENV_RESULT)"
-            }
-            if ($env:HAS_NUGET -ne 'true') {
-              Write-Host "  - 'nuget' not in publish-targets"
-            }
-          }
-          Write-Host ""
-          Write-Host "Actions-only release condition (main branch AND release required AND build succeeded AND actions in publish-targets AND nuget NOT in publish-targets):"
-          if ($runReleaseActions) {
-            Write-Host "✅ WILL RUN: Actions-only release job will execute"
-          } else {
-            Write-Host "❌ WILL SKIP: Actions-only release job will be skipped"
-            if ($env:HAS_ACTIONS -ne 'true') {
-              Write-Host "  - 'actions' not in publish-targets"
-            }
-            if ($env:HAS_NUGET -eq 'true') {
-              Write-Host "  - 'nuget' is also in publish-targets; the NuGet release job handles the GitHub release"
+            if ($env:HAS_NUGET -ne 'true' -and $env:HAS_ACTIONS -ne 'true') {
+              Write-Host "  - Neither 'nuget' nor 'actions' in publish-targets"
             }
           }
           Write-Host ""
@@ -437,20 +415,15 @@ jobs:
           CURRENT_REF: ${{ github.ref }}
           RELEASE_REQUIRED: ${{ needs.check-release-required.outputs.release_required }}
           BUILD_RESULT: ${{ needs.build.result }}
-          NUGET_ENV_RESULT: ${{ needs.check-nuget-environment.result }}
           HAS_NUGET: ${{ needs.check-publish-targets.outputs.has_nuget }}
           HAS_ACTIONS: ${{ needs.check-publish-targets.outputs.has_actions }}
         shell: pwsh
         run: |
           $baseCondition = $env:EXPECTED_REF -eq $env:CURRENT_REF -and $env:RELEASE_REQUIRED -eq 'true' -and $env:BUILD_RESULT -eq 'success'
-          $runRelease = $baseCondition -and $env:NUGET_ENV_RESULT -eq 'success' -and $env:HAS_NUGET -eq 'true'
-          $runReleaseActions = $baseCondition -and $env:HAS_ACTIONS -eq 'true' -and $env:HAS_NUGET -ne 'true'
+          $runRelease = $baseCondition -and ($env:HAS_NUGET -eq 'true' -or $env:HAS_ACTIONS -eq 'true')
           Add-Content -Path $env:GITHUB_OUTPUT -Value "run_release=$($runRelease.ToString().ToLower())"
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "run_release_actions=$($runReleaseActions.ToString().ToLower())"
           if ($runRelease) {
-            Write-Host "::notice::NuGet release will run"
-          } elseif ($runReleaseActions) {
-            Write-Host "::notice::Actions-only release will run"
+            Write-Host "::notice::Release will run"
           } else {
             Write-Host "::notice::Release will be skipped"
           }
@@ -463,9 +436,9 @@ jobs:
       id-token: write
       actions: write
     runs-on: ubuntu-latest
-    needs: [build, check-nuget-environment, check-release-required, debug-release-values, check-nuget-user-populated, check-nuget-api-key-populated]
+    needs: [build, check-release-required, debug-release-values, check-nuget-user-populated, check-nuget-api-key-populated, check-publish-targets]
     environment:
-      name: nuget
+      name: release
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: 1
       DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
@@ -483,7 +456,7 @@ jobs:
         
         echo "Current release: $CURRENT_VERSION (SHA: $CURRENT_SHA, Run ID: $CURRENT_RUN_ID)"
         
-        # Get all workflow runs that are waiting for approval on the nuget environment
+        # Get all workflow runs that are waiting for approval on the release environment
         # Filter for runs on the default branch that are in 'waiting' status
         pending_runs=$(gh api \
           -H "Accept: application/vnd.github+json" \
@@ -498,7 +471,7 @@ jobs:
         
         echo "Found pending workflow runs to check: $pending_runs"
         
-        # For each pending run, check if it has pending deployments for the nuget environment
+        # For each pending run, check if it has pending deployments for the release environment
         for run_id in $pending_runs; do
           echo "Checking run $run_id for pending deployments..."
           
@@ -507,10 +480,10 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             "/repos/${{ github.repository }}/actions/runs/$run_id/pending_deployments" \
-            --jq '.[] | select(.environment.name == "nuget") | .environment.id' 2>/dev/null || echo "")
+            --jq '.[] | select(.environment.name == "release") | .environment.id' 2>/dev/null || echo "")
           
           if [ -n "$pending_deployments" ]; then
-            echo "Found pending deployment for nuget environment in run $run_id"
+            echo "Found pending deployment for release environment in run $run_id"
             
             # Reject the pending deployment
             for env_id in $pending_deployments; do
@@ -528,13 +501,14 @@ jobs:
                 || echo "Failed to reject deployment in run $run_id"
             done
           else
-            echo "No pending nuget deployment found for run $run_id"
+            echo "No pending release deployment found for run $run_id"
           fi
         done
         
         echo "Finished canceling old pending releases"
     
     - name: Download NuGet Packages
+      if: needs.check-publish-targets.outputs.has_nuget == 'true'
       uses: actions/download-artifact@v8
       with:
         name: nuget
@@ -599,13 +573,13 @@ jobs:
 
     - name: NuGet login (OIDC → temp API key)
       uses: NuGet/login@v1
-      if: needs.check-nuget-user-populated.outputs.has_nuget_user == 'true'
+      if: needs.check-publish-targets.outputs.has_nuget == 'true' && needs.check-nuget-user-populated.outputs.has_nuget_user == 'true'
       id: nuget-login
       with:
         user: ${{ secrets.NUGET_USER }}
     
     - name: NuGet Push (Trusted Publisher)
-      if: needs.check-nuget-user-populated.outputs.has_nuget_user == 'true'
+      if: needs.check-publish-targets.outputs.has_nuget == 'true' && needs.check-nuget-user-populated.outputs.has_nuget_user == 'true'
       env:
         NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
         SOURCE_URL: https://api.nuget.org/v3/index.json
@@ -620,80 +594,9 @@ jobs:
       env:
         NUGET_AUTH_TOKEN: ${{ secrets.NUGET_API_KEY }}
         SOURCE_URL: https://api.nuget.org/v3/index.json
-      if: needs.check-nuget-api-key-populated.outputs.has_api_key == 'true'
+      if: needs.check-publish-targets.outputs.has_nuget == 'true' && needs.check-nuget-api-key-populated.outputs.has_api_key == 'true'
       working-directory: nuget
       run: |
         for package in *.nupkg; do
           dotnet nuget push -s "$SOURCE_URL" -k "$NUGET_AUTH_TOKEN" "$package"
         done
-
-  release-actions:
-    if: always() && needs.debug-release-values.outputs.run_release_actions == 'true'
-    permissions:
-      contents: write
-      id-token: write
-      actions: write
-    runs-on: ubuntu-latest
-    needs: [build, check-release-required, debug-release-values]
-    env:
-      DOTNET_CLI_TELEMETRY_OPTOUT: 1
-      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
-      DOTNET_NOLOGO: true
-      DOTNET_GENERATE_ASPNET_CERTIFICATE: false
-    steps:
-    - name: Download DocFX Artifact
-      if: inputs.apiDocumentation == 'DocFx'
-      uses: actions/download-artifact@v8
-      with:
-        name: docfx
-        path: ${{ github.workspace }}/docfx
-    
-    - name: Create docfx-metadata.zip
-      if: inputs.apiDocumentation == 'DocFx'
-      shell: pwsh
-      run: |
-        $docfxPath = "${{ github.workspace }}/docfx"
-        $zipPath = "${{ github.workspace }}/docfx-metadata.zip"
-        
-        if (Test-Path $docfxPath) {
-          Compress-Archive -Path "$docfxPath/*" -DestinationPath $zipPath -CompressionLevel Optimal
-          Write-Output "::notice::Created docfx-metadata.zip with contents from docfx artifact"
-        } else {
-          Write-Output "::warning::DocFX artifact path not found, skipping zip creation"
-        }
-    
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
-      with:
-          tag_name: ${{ needs.build.outputs.nbgv }}
-          release_name: ${{ needs.build.outputs.nbgv }}
-          body: |
-            ${{ needs.build.outputs.change_commit_log }}
-          draft: true
-    
-    - name: Upload DocFX Metadata to Release
-      if: inputs.apiDocumentation == 'DocFx'
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${{ github.workspace }}/docfx-metadata.zip
-        asset_name: docfx-metadata.zip
-        asset_content_type: application/zip
-
-    - name: Publish Release
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        set -e
-        # Publish the draft release
-        if gh release edit "${{ needs.build.outputs.nbgv }}" --repo "${{ github.repository }}" --draft=false; then
-          echo "::notice::Successfully published release ${{ needs.build.outputs.nbgv }}"
-        else
-          echo "::error::Failed to publish release ${{ needs.build.outputs.nbgv }}"
-          exit 1
-        fi
