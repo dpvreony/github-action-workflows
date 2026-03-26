@@ -102,7 +102,7 @@ jobs:
   osv-scan:
     needs: check-codeql-enabled
     if: needs.check-codeql-enabled.outputs.codeql_enabled == 'true'
-    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@v2.3.3"
+    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@v2.3.5"
     permissions:
       actions: read
       contents: read
