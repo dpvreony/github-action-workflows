@@ -132,3 +132,35 @@ jobs:
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       SYNCFUSION_LICENSE_KEY: ${{ secrets.SYNCFUSION_LICENSE_KEY }}
+
+  upload-coverage:
+    needs: [build-linux, build-windows, build-macos]
+    if: |
+      always() &&
+      !cancelled() &&
+      (needs.build-linux.result == 'success' || needs.build-windows.result == 'success' || needs.build-macos.result == 'success')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download unit test coverage artifact
+        id: download-coverage
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: unittestcoverage
+          path: artifacts/unittestcoverage
+        continue-on-error: true
+
+      - name: Upload Coverage to Codecov
+        if: steps.download-coverage.outcome == 'success'
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        shell: bash
+        run: |
+          if [ -z "$CODECOV_TOKEN" ]; then
+            echo "::notice::CODECOV_TOKEN not configured, skipping coverage upload."
+            exit 0
+          fi
+          curl -Os https://uploader.codecov.io/latest/linux/codecov
+          curl -Os https://uploader.codecov.io/latest/linux/codecov.SHA256SUM
+          sha256sum --check codecov.SHA256SUM
+          chmod +x codecov
+          ./codecov -s 'artifacts/unittestcoverage' -f '*.xml' -v -t "$CODECOV_TOKEN"

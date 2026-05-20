@@ -22,9 +22,6 @@ inputs:
   osName:
     description: 'OS name for artifact naming (e.g., linux, windows, macos)'
     required: true
-  codecovToken:
-    description: 'Codecov token for coverage upload'
-    required: false
   sonarToken:
     description: 'Sonar token for scanning'
     required: false
@@ -335,23 +332,6 @@ runs:
       run: |
         docfx metadata "${{ github.workspace }}/github-action-workflows/eng/docfx/docfx.json" --logLevel verbose
 
-    - name: Upload Code Coverage
-      if: inputs.codecovToken != ''
-      shell: pwsh
-      run: |
-        if ($IsLinux) {
-          curl -Os https://uploader.codecov.io/latest/linux/codecov
-          chmod +x codecov
-          ./codecov -s 'artifacts/unittestcoverage' -f '*.xml' -v -t '${{ inputs.codecovToken }}'
-        } elseif ($IsMacOS) {
-          curl -Os https://uploader.codecov.io/latest/macos/codecov
-          chmod +x codecov
-          ./codecov -s 'artifacts/unittestcoverage' -f '*.xml' -v -t '${{ inputs.codecovToken }}'
-        } elseif ($IsWindows) {
-          Invoke-WebRequest -Uri https://uploader.codecov.io/latest/windows/codecov.exe -Outfile codecov.exe
-          .\codecov.exe -s 'artifacts/unittestcoverage' -f '*.xml' -v -t '${{ inputs.codecovToken }}'
-        }
-    
     - name: store binlogs
       if: failure()
       uses: actions/upload-artifact@v7

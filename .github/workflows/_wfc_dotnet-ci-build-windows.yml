@@ -109,7 +109,6 @@ jobs:
           osName: windows
           workloads: ${{ inputs.workloads }}
           produceNugetPackages: ${{ inputs.produceNugetPackages }}
-          codecovToken: ${{ secrets.CODECOV_TOKEN }}
           sonarToken: ${{ secrets.SONAR_TOKEN }}
           sonarProjectKey: ${{ secrets.SONAR_PROJECT_KEY }}
           sonarOrganisationKey: ${{ secrets.SONAR_ORGANISATION_KEY }}
