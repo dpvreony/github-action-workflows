@@ -68,6 +68,5 @@ jobs:
           runIntTests: ${{ inputs.runIntTests }}
           osName: macos
           workloads: ${{ inputs.workloads }}
-          codecovToken: ${{ secrets.CODECOV_TOKEN }}
           apiDocumentation: ${{ inputs.apiDocumentation }}
           syncfusionLicense: ${{ secrets.SYNCFUSION_LICENSE_KEY }}

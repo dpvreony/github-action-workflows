@@ -45,7 +45,7 @@ The workflow supports building and testing on multiple operating systems:
 - In `linux-primary-and-windows-secondary` mode, Linux generates release artifacts
 - In `linux-secondary-and-windows-primary` mode, Windows generates release artifacts
 - macOS builds, when enabled, only build and test - they never pack or release
-- Test coverage is uploaded only from the primary OS
+- Test coverage is stored as a workflow artifact by the primary OS build and uploaded to Codecov by the dedicated `upload-coverage` job
 - Binlog artifacts are OS-specific and include the OS name in the artifact name
 
 ## Jobs Overview
@@ -71,6 +71,7 @@ The workflow consists of several jobs, many of which delegate their logic to ded
 | `omd-generation`          | Generates object-modeling technique (OMT) diagrams   | `_wfc_dotnet-ci-omd-generation.yml`                   |
 | `release`                 | Creates a GitHub release and pushes NuGet packages using Trusted Publishers (OIDC) | Inline (uses `actions/create-release` & `NuGet/login@v1`) |
 | `snitch`                  | A tool that helps you find duplicate transitive package references | `_wfc_dotnet-ci-snitch.yml`                           |
+| `upload-coverage`         | Downloads the `unittestcoverage` artifact and uploads it to Codecov; runs as a downstream job so a Codecov upload failure can be retried without rebuilding | `_wfc_dotnet-ci-build.yml` (inline) |
 | `validate-renovate`       | Validates Renovate configuration                     | Inline (uses `dpvreony/github-action-renovate-config-validator`) |
 | `vulnerable-nuget-packages` | Checks for vulnerable NuGet packages               | `_wfc_dotnet-ci-vulnerable-nuget-packages.yml`        |
 
@@ -336,6 +337,7 @@ secrets:
 
 - **Multi-OS Support:** Build and test on Linux, Windows, and macOS with configurable primary OS for releases.
 - **Modular Design:** Uses sub-workflows for modularity and reusability.
+- **Resilient Coverage Upload:** Code coverage is stored as a workflow artifact during the build and uploaded to Codecov in a separate downstream job (`upload-coverage`). If the Codecov upload fails, the lightweight downstream job can be re-run independently without triggering a full rebuild.
 - **Security:** Checks for environment protection before NuGet release. Includes CodeQL security analysis for public repositories and private repositories with Advanced Security enabled.
 - **Smart Release Detection:** Automatically determines if a release is needed by comparing changes since the last release, excluding test files.
 - **Old Build Protection:** Prevents outdated builds from triggering releases when a newer release already exists.
