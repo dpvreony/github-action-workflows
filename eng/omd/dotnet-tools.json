@@ -3,7 +3,7 @@
   "isRoot": true,
   "tools": {
     "dotmorten.omdgenerator": {
-      "version": "1.6.0",
+      "version": "1.8.3",
       "commands": [
         "generateomd"
       ],
