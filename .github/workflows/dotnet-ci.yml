@@ -102,7 +102,7 @@ jobs:
   osv-scan:
     needs: check-codeql-enabled
     if: needs.check-codeql-enabled.outputs.codeql_enabled == 'true'
-    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@v2.3.8"
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@9a498708959aeaef5ef730655706c5a1df1edbc2 # v2.3.8
     permissions:
       actions: read
       contents: read
@@ -118,16 +118,20 @@ jobs:
     if: github.event_name == 'pull_request'
     steps:
       - name: 'Checkout Repository'
-        uses: actions/checkout@v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          persist-credentials: false
       - name: 'Dependency Review'
-        uses: actions/dependency-review-action@v5.0.0
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
         with:
           comment-summary-in-pr: always
 
   validate-renovate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          persist-credentials: false
       - uses: dpvreony/github-action-renovate-config-validator@63c5f53df823879a6cd46a10d27fbe1d4ede7839
 
   omd-generation:
@@ -211,19 +215,21 @@ jobs:
     if: needs.check-nuget-user-populated.outputs.has_nuget_user == 'true'
     steps:
       - name: Validate NuGet Trusted Publisher login
-        uses: NuGet/login@v1
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1
         id: nuget-login-test
         with:
           user: ${{ secrets.NUGET_USER }}
       
       - name: Confirm Trusted Publisher is valid
         run: |
-          if [ -n "${{ steps.nuget-login-test.outputs.NUGET_API_KEY }}" ]; then
+          if [ -n "${STEPS_NUGET_LOGIN_TEST_OUTPUTS_NUGET_API_KEY}" ]; then
             echo "::notice::Successfully validated NuGet Trusted Publisher. Temporary API key obtained."
           else
             echo "::error::Failed to obtain temporary API key from NuGet Trusted Publisher."
             exit 1
           fi
+        env:
+          STEPS_NUGET_LOGIN_TEST_OUTPUTS_NUGET_API_KEY: ${{ steps.nuget-login-test.outputs.NUGET_API_KEY }}
      
   check-release-environment:
     permissions:
@@ -244,7 +250,7 @@ jobs:
       (needs.check-nuget-user-populated.outputs.has_nuget_user == 'true' || needs.check-nuget-api-key-populated.outputs.has_api_key == 'true')
     steps:
       - name: Check if 'release' environment exists and has protection rules
-        uses: dpvreony/ensure-environment-protected@1.0.0
+        uses: dpvreony/ensure-environment-protected@af96e7c8e3da8ca6733c01647a8629a47d983ba6 # 1.0.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           environment_name: 'release'

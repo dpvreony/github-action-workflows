@@ -81,8 +81,14 @@ jobs:
           Write-Host "has_publish: $env:HAS_PUBLISH"
           Write-Host ""
           Write-Host "## Release Job Condition Evaluation"
-          $baseCondition = $env:EXPECTED_REF -eq $env:CURRENT_REF -and $env:RELEASE_REQUIRED -eq 'true' -and $env:BUILD_RESULT -eq 'success'
-          $runRelease = $baseCondition -and ($env:HAS_NUGET -eq 'true' -or $env:HAS_ACTIONS -eq 'true')
+          $releaseRequired = $false
+          $hasNuget = $false
+          $hasActions = $false
+          if (-not [bool]::TryParse("$env:RELEASE_REQUIRED", [ref]$releaseRequired)) { $releaseRequired = $false }
+          if (-not [bool]::TryParse("$env:HAS_NUGET", [ref]$hasNuget)) { $hasNuget = $false }
+          if (-not [bool]::TryParse("$env:HAS_ACTIONS", [ref]$hasActions)) { $hasActions = $false }
+          $baseCondition = $env:EXPECTED_REF -eq $env:CURRENT_REF -and $releaseRequired -and $env:BUILD_RESULT -eq 'success'
+          $runRelease = $baseCondition -and ($hasNuget -or $hasActions)
           Write-Host "Release condition (main branch AND release required AND build succeeded AND (nuget OR actions in publish-targets)):"
           if ($runRelease) {
             Write-Host "✅ WILL RUN: Release job will execute"
@@ -93,19 +99,19 @@ jobs:
             if ($env:EXPECTED_REF -ne $env:CURRENT_REF) {
               Write-Host "  - Not on main branch (current: $env:CURRENT_REF)"
             }
-            if ($env:RELEASE_REQUIRED -ne 'true') {
+            if (-not $releaseRequired) {
               Write-Host "  - Release not required (release_required: $env:RELEASE_REQUIRED)"
             }
             if ($env:BUILD_RESULT -ne 'success') {
               Write-Host "  - Build did not succeed (build result: $env:BUILD_RESULT)"
             }
-            if ($env:HAS_NUGET -ne 'true' -and $env:HAS_ACTIONS -ne 'true') {
+            if (-not $hasNuget -and -not $hasActions) {
               Write-Host "  - Neither 'nuget' nor 'actions' in publish-targets"
             }
           }
           Write-Host ""
           Write-Host "=== End of Release Decision Troubleshooting ==="
-      
+
       - name: Set release output
         id: evaluate-release-condition
         env:
@@ -117,8 +123,14 @@ jobs:
           HAS_ACTIONS: ${{ inputs.has_actions }}
         shell: pwsh
         run: |
-          $baseCondition = $env:EXPECTED_REF -eq $env:CURRENT_REF -and $env:RELEASE_REQUIRED -eq 'true' -and $env:BUILD_RESULT -eq 'success'
-          $runRelease = $baseCondition -and ($env:HAS_NUGET -eq 'true' -or $env:HAS_ACTIONS -eq 'true')
+          $releaseRequired = $false
+          $hasNuget = $false
+          $hasActions = $false
+          if (-not [bool]::TryParse("$env:RELEASE_REQUIRED", [ref]$releaseRequired)) { $releaseRequired = $false }
+          if (-not [bool]::TryParse("$env:HAS_NUGET", [ref]$hasNuget)) { $hasNuget = $false }
+          if (-not [bool]::TryParse("$env:HAS_ACTIONS", [ref]$hasActions)) { $hasActions = $false }
+          $baseCondition = $env:EXPECTED_REF -eq $env:CURRENT_REF -and $releaseRequired -and $env:BUILD_RESULT -eq 'success'
+          $runRelease = $baseCondition -and ($hasNuget -or $hasActions)
           Add-Content -Path $env:GITHUB_OUTPUT -Value "run_release=$($runRelease.ToString().ToLower())"
           if ($runRelease) {
             Write-Host "::notice::Release will run"

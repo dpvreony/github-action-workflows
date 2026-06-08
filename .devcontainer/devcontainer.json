@@ -1,0 +1,5 @@
+{
+  "name": "github-action-workflows",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "postCreateCommand": "pip install zizmor"
+}

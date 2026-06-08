@@ -60,13 +60,13 @@ runs:
   using: 'composite'
   steps:
     - name: Setup Java 17
-      uses: actions/setup-java@v5
+      uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
       with:
         distribution: 'temurin'
         java-version: '17'
     
     - name: Install .NET
-      uses: actions/setup-dotnet@v5
+      uses: actions/setup-dotnet@9a946fdbd5fb07b82b2f5a4466058b876ab72bb2 # v5
       with:
         global-json-file: "a/global.json"
     
@@ -125,7 +125,7 @@ runs:
       working-directory: a
 
     - name: Changelog
-      uses: glennawatson/ChangeLog@v1
+      uses: glennawatson/ChangeLog@0464dd89b26f61fecf24b41d675f8ffdb11c4c3f # v1
       id: changelog
       with:
         path: a
@@ -143,14 +143,21 @@ runs:
       shell: pwsh
       working-directory: a/src
       run: |
-        $solutionExt = if ('${{ inputs.useSlnx }}' -eq 'true') { 'slnx' } else { 'sln' }
-        dotnet restore "${{ inputs.solutionName }}.$solutionExt" /bl:${{ github.workspace }}/artifacts/binlog/restore.binlog
+        $useSlnx = $false
+        if (-not [bool]::TryParse("$env:INPUTS_USESLNX", [ref]$useSlnx)) {
+          $useSlnx = $false
+        }
+        $solutionExt = if ($useSlnx) { 'slnx' } else { 'sln' }
+        dotnet restore "$env:INPUTS_SOLUTIONNAME.$solutionExt" /bl:${{ github.workspace }}/artifacts/binlog/restore.binlog
+      env:
+        INPUTS_USESLNX: ${{ inputs.useSlnx }}
+        INPUTS_SOLUTIONNAME: ${{ inputs.solutionName }}
     
     - name: Report Changelog Summary
       shell: pwsh
       run: |
         $changecommitlog = @'
-        ${{ steps.changelog.outputs.commitLog }}
+        $env:STEPS_CHANGELOG_OUTPUTS_COMMITLOG
         '@
         $changecommitlog = $changecommitlog.Replace('"', '''')
         $lines = $changecommitlog -split "`n"
@@ -158,13 +165,19 @@ runs:
           Write-Output "::notice::$line"
           Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value $line
         }
+      env:
+        STEPS_CHANGELOG_OUTPUTS_COMMITLOG: ${{ steps.changelog.outputs.commitLog }}
     
     - name: Run Sonar Scanner begin
       if: inputs.isPrimaryBuildOs == 'true' && inputs.sonarToken != '' && inputs.sonarProjectKey != '' && inputs.sonarOrganisationKey != ''
       shell: pwsh
       working-directory: a/src
       run: |
-        sonarscanner begin /k:"${{ inputs.sonarProjectKey }}" /d:sonar.login="${{ inputs.sonarToken }}" /d:sonar.host.url="https://sonarcloud.io" /o:"${{ inputs.sonarOrganisationKey }}" /d:sonar.cs.opencover.reportsPaths="${{ github.workspace }}/artifacts/unittestcoverage/coverage.xml"
+        sonarscanner begin /k:"$env:INPUTS_SONARPROJECTKEY" /d:sonar.login="$env:INPUTS_SONARTOKEN" /d:sonar.host.url="https://sonarcloud.io" /o:"$env:INPUTS_SONARORGANISATIONKEY" /d:sonar.cs.opencover.reportsPaths="${{ github.workspace }}/artifacts/unittestcoverage/coverage.xml"
+      env:
+        INPUTS_SONARPROJECTKEY: ${{ inputs.sonarProjectKey }}
+        INPUTS_SONARTOKEN: ${{ inputs.sonarToken }}
+        INPUTS_SONARORGANISATIONKEY: ${{ inputs.sonarOrganisationKey }}
     
     - name: Run Build
       id: run-build
@@ -172,10 +185,18 @@ runs:
       working-directory: a/src
       run: |
         $env:CHANGE_COMMIT_LOG = @'
-        ${{ steps.changelog.outputs.commitLog }}
+        $env:STEPS_CHANGELOG_OUTPUTS_COMMITLOG
         '@
-        $solutionExt = if ('${{ inputs.useSlnx }}' -eq 'true') { 'slnx' } else { 'sln' }
-        dotnet build "${{ inputs.solutionName }}.$solutionExt" --configuration Release --no-restore /bl:${{ github.workspace }}/artifacts/binlog/build.binlog /p:ContinuousIntegrationBuild=true "/p:SyncfusionLicense={inputs.syncFusionLicense}"
+        $useSlnx = $false
+        if (-not [bool]::TryParse("$env:INPUTS_USESLNX", [ref]$useSlnx)) {
+          $useSlnx = $false
+        }
+        $solutionExt = if ($useSlnx) { 'slnx' } else { 'sln' }
+        dotnet build "$env:INPUTS_SOLUTIONNAME.$solutionExt" --configuration Release --no-restore /bl:${{ github.workspace }}/artifacts/binlog/build.binlog /p:ContinuousIntegrationBuild=true "/p:SyncfusionLicense={inputs.syncFusionLicense}"
+      env:
+        STEPS_CHANGELOG_OUTPUTS_COMMITLOG: ${{ steps.changelog.outputs.commitLog }}
+        INPUTS_USESLNX: ${{ inputs.useSlnx }}
+        INPUTS_SOLUTIONNAME: ${{ inputs.solutionName }}
     
     - name: Run Unit Tests
       shell: pwsh
@@ -218,8 +239,11 @@ runs:
       shell: pwsh
       working-directory: a/src
       run: |
-        $env:GITHUB_TOKEN = "${{ inputs.githubToken }}"
-        sonarscanner end /d:sonar.login="${{ inputs.sonarToken }}"
+        $env:GITHUB_TOKEN = "$env:INPUTS_GITHUBTOKEN"
+        sonarscanner end /d:sonar.login="$env:INPUTS_SONARTOKEN"
+      env:
+        INPUTS_GITHUBTOKEN: ${{ inputs.githubToken }}
+        INPUTS_SONARTOKEN: ${{ inputs.sonarToken }}
     
     - name: Run BinLogStats for Build
       if: always() && !cancelled() && (steps.run-build.outcome == 'success' || steps.run-build.outcome == 'failure')
@@ -296,17 +320,28 @@ runs:
       working-directory: a/src
       run: |
         $env:CHANGE_COMMIT_LOG = @'
-        ${{ steps.changelog.outputs.commitLog }}
+        $env:STEPS_CHANGELOG_OUTPUTS_COMMITLOG
         '@
-        $solutionExt = if ('${{ inputs.useSlnx }}' -eq 'true') { 'slnx' } else { 'sln' }
-        dotnet pack "${{ inputs.solutionName }}.$solutionExt" --configuration Release --no-build /bl:${{ github.workspace }}/artifacts/binlog/pack.binlog --nologo /p:PackageOutputPath=${{ github.workspace }}/artifacts/nuget /p:ContinuousIntegrationBuild=true
+        $useSlnx = $false
+        if (-not [bool]::TryParse("$env:INPUTS_USESLNX", [ref]$useSlnx)) {
+          $useSlnx = $false
+        }
+        $solutionExt = if ($useSlnx) { 'slnx' } else { 'sln' }
+        dotnet pack "$env:INPUTS_SOLUTIONNAME.$solutionExt" --configuration Release --no-build /bl:${{ github.workspace }}/artifacts/binlog/pack.binlog --nologo /p:PackageOutputPath=${{ github.workspace }}/artifacts/nuget /p:ContinuousIntegrationBuild=true
+      env:
+        STEPS_CHANGELOG_OUTPUTS_COMMITLOG: ${{ steps.changelog.outputs.commitLog }}
+        INPUTS_USESLNX: ${{ inputs.useSlnx }}
+        INPUTS_SOLUTIONNAME: ${{ inputs.solutionName }}
     
     - name: Generate SBOM
       if: inputs.isPrimaryBuildOs == 'true' && inputs.produceNugetPackages == 'true'
       shell: pwsh
       working-directory: a
       run: |
-        sbom-tool generate -b ${{ github.workspace }}/artifacts/nuget -bc src -pn ${{ inputs.solutionName }} -pv ${{ steps.nbgv.outputs.SimpleVersion }} -ps "DHGMS Solutions" -nsb https://sbom.dhgms.com -m ${{ github.workspace }}/artifacts/sbom
+        sbom-tool generate -b ${{ github.workspace }}/artifacts/nuget -bc src -pn $env:INPUTS_SOLUTIONNAME -pv $env:STEPS_NBGV_OUTPUTS_SIMPLEVERSION -ps "DHGMS Solutions" -nsb https://sbom.dhgms.com -m ${{ github.workspace }}/artifacts/sbom
+      env:
+        INPUTS_SOLUTIONNAME: ${{ inputs.solutionName }}
+        STEPS_NBGV_OUTPUTS_SIMPLEVERSION: ${{ steps.nbgv.outputs.SimpleVersion }}
     
     - name: List outdated packages
       if: inputs.isPrimaryBuildOs == 'true'
@@ -317,7 +352,7 @@ runs:
     
     - name: VirusTotal Monitor Scan
       if: inputs.isPrimaryBuildOs == 'true' && inputs.produceNugetPackages == 'true' && inputs.virusTotalApiKey != ''
-      uses: crazy-max/ghaction-virustotal@v5
+      uses: crazy-max/ghaction-virustotal@936d8c5c00afe97d3d9a1af26d017cfdf26800a2 # v5
       with:
         vt_api_key: ${{ inputs.virusTotalApiKey }}
         vt_monitor: true
@@ -334,14 +369,14 @@ runs:
 
     - name: store binlogs
       if: failure()
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
       with:
         name: binlogs-${{ inputs.osName }}
         path: artifacts/binlog
     
     - name: store unit test coverage
       if: inputs.isPrimaryBuildOs == 'true'
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
       with:
         name: unittestcoverage
         path: artifacts/unittestcoverage
@@ -349,14 +384,14 @@ runs:
     
     - name: store integration test coverage
       if: inputs.isPrimaryBuildOs == 'true' && inputs.runIntTests == 'true'
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
       with:
         name: inttestcoverage
         path: artifacts/inttestcoverage
     
     - name: store nuget packages
       if: inputs.isPrimaryBuildOs == 'true' && inputs.produceNugetPackages == 'true'
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
       with:
         name: nuget
         path: artifacts/nuget
@@ -364,28 +399,28 @@ runs:
     
     - name: store omd
       if: inputs.isPrimaryBuildOs == 'true'
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
       with:
         name: omd
         path: artifacts/omd
     
     - name: store sbom
       if: inputs.isPrimaryBuildOs == 'true' && inputs.produceNugetPackages == 'true'
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
       with:
         name: sbom
         path: artifacts/sbom
     
     - name: store outdated
       if: inputs.isPrimaryBuildOs == 'true'
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
       with:
         name: outdated
         path: artifacts/outdated
 
     - name: store docfx
       if: inputs.isPrimaryBuildOs == 'true' && inputs.apiDocumentation == 'DocFx'
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
       with:
         name: docfx
         path: artifacts/docfx

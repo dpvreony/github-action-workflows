@@ -68,16 +68,20 @@ jobs:
     steps:
       - name: Validate primary-build-mode input
         run: |
-          if [[ "${{ inputs['primary-build-mode'] }}" != "linux-only" && "${{ inputs['primary-build-mode'] }}" != "linux-primary-and-windows-secondary" && "${{ inputs['primary-build-mode'] }}" != "linux-secondary-and-windows-primary" && "${{ inputs['primary-build-mode'] }}" != "windows-only" ]]; then
-            echo "::error::Invalid primary-build-mode value '${{ inputs['primary-build-mode'] }}'. Valid values are 'linux-only', 'linux-primary-and-windows-secondary', 'linux-secondary-and-windows-primary', or 'windows-only'."
+          if [[ "${INPUTS_PRIMARY_BUILD_MODE}" != "linux-only" && "${INPUTS_PRIMARY_BUILD_MODE}" != "linux-primary-and-windows-secondary" && "${INPUTS_PRIMARY_BUILD_MODE}" != "linux-secondary-and-windows-primary" && "${INPUTS_PRIMARY_BUILD_MODE}" != "windows-only" ]]; then
+            echo "::error::Invalid primary-build-mode value '${INPUTS_PRIMARY_BUILD_MODE}'. Valid values are 'linux-only', 'linux-primary-and-windows-secondary', 'linux-secondary-and-windows-primary', or 'windows-only'."
             exit 1
           fi
+        env:
+          INPUTS_PRIMARY_BUILD_MODE: ${{ inputs['primary-build-mode'] }}
       - name: Validate integration-test-os input
         run: |
-          if [[ "${{ inputs['integration-test-os'] }}" != "both" && "${{ inputs['integration-test-os'] }}" != "linux" && "${{ inputs['integration-test-os'] }}" != "windows" ]]; then
-            echo "::error::Invalid integration-test-os value '${{ inputs['integration-test-os'] }}'. Valid values are 'both', 'linux', or 'windows'."
+          if [[ "${INPUTS_INTEGRATION_TEST_OS}" != "both" && "${INPUTS_INTEGRATION_TEST_OS}" != "linux" && "${INPUTS_INTEGRATION_TEST_OS}" != "windows" ]]; then
+            echo "::error::Invalid integration-test-os value '${INPUTS_INTEGRATION_TEST_OS}'. Valid values are 'both', 'linux', or 'windows'."
             exit 1
           fi
+        env:
+          INPUTS_INTEGRATION_TEST_OS: ${{ inputs['integration-test-os'] }}
 
   build-linux:
     needs: validate-inputs
