@@ -62,12 +62,12 @@ jobs:
 
     - name: Restore Packages
       run: |
-        dotnet restore ${solutionpath} -- /bl:artifacts\\binlog\\restore.binlog
+        dotnet restore "${solutionpath}" -- /bl:artifacts\\binlog\\restore.binlog
       working-directory: a/src
 
     - name: List licenses
       run: |
-        dotnet nuget-license -i ${{ github.workspace }}/a/src/${solutionpath} -t -o Json -fo ${{ github.workspace }}/artifacts/licenses/licenses.json
+        dotnet nuget-license -i "${{ github.workspace }}/a/src/${solutionpath}" -t -o Json -fo "${{ github.workspace }}/artifacts/licenses/licenses.json"
       working-directory:
         github-action-workflows/eng/licenses
 

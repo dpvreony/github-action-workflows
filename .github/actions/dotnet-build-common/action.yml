@@ -143,7 +143,11 @@ runs:
       shell: pwsh
       working-directory: a/src
       run: |
-        $solutionExt = if ('$env:INPUTS_USESLNX' -eq 'true') { 'slnx' } else { 'sln' }
+        $useSlnx = $false
+        if (-not [bool]::TryParse("$env:INPUTS_USESLNX", [ref]$useSlnx)) {
+          $useSlnx = $false
+        }
+        $solutionExt = if ($useSlnx) { 'slnx' } else { 'sln' }
         dotnet restore "$env:INPUTS_SOLUTIONNAME.$solutionExt" /bl:${{ github.workspace }}/artifacts/binlog/restore.binlog
       env:
         INPUTS_USESLNX: ${{ inputs.useSlnx }}
@@ -183,7 +187,11 @@ runs:
         $env:CHANGE_COMMIT_LOG = @'
         $env:STEPS_CHANGELOG_OUTPUTS_COMMITLOG
         '@
-        $solutionExt = if ('$env:INPUTS_USESLNX' -eq 'true') { 'slnx' } else { 'sln' }
+        $useSlnx = $false
+        if (-not [bool]::TryParse("$env:INPUTS_USESLNX", [ref]$useSlnx)) {
+          $useSlnx = $false
+        }
+        $solutionExt = if ($useSlnx) { 'slnx' } else { 'sln' }
         dotnet build "$env:INPUTS_SOLUTIONNAME.$solutionExt" --configuration Release --no-restore /bl:${{ github.workspace }}/artifacts/binlog/build.binlog /p:ContinuousIntegrationBuild=true "/p:SyncfusionLicense={inputs.syncFusionLicense}"
       env:
         STEPS_CHANGELOG_OUTPUTS_COMMITLOG: ${{ steps.changelog.outputs.commitLog }}
@@ -314,7 +322,11 @@ runs:
         $env:CHANGE_COMMIT_LOG = @'
         $env:STEPS_CHANGELOG_OUTPUTS_COMMITLOG
         '@
-        $solutionExt = if ('$env:INPUTS_USESLNX' -eq 'true') { 'slnx' } else { 'sln' }
+        $useSlnx = $false
+        if (-not [bool]::TryParse("$env:INPUTS_USESLNX", [ref]$useSlnx)) {
+          $useSlnx = $false
+        }
+        $solutionExt = if ($useSlnx) { 'slnx' } else { 'sln' }
         dotnet pack "$env:INPUTS_SOLUTIONNAME.$solutionExt" --configuration Release --no-build /bl:${{ github.workspace }}/artifacts/binlog/pack.binlog --nologo /p:PackageOutputPath=${{ github.workspace }}/artifacts/nuget /p:ContinuousIntegrationBuild=true
       env:
         STEPS_CHANGELOG_OUTPUTS_COMMITLOG: ${{ steps.changelog.outputs.commitLog }}
