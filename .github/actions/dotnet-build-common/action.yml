@@ -83,7 +83,7 @@ runs:
     
     - name: NBGV
       id: nbgv
-      uses: dotnet/nbgv@master
+      uses: dotnet/nbgv@705dad19ab067f12f4e9eeaa60812e01edef5d25
       with:
         setAllVars: true
         path: a
