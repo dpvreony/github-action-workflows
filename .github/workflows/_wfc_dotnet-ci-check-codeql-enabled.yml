@@ -20,9 +20,10 @@ jobs:
         id: check
         env:
           GH_TOKEN: ${{ github.token }}
+          GITHUB_EVENT_REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
         run: |
           # Check if repository is public
-          if [ "${{ github.event.repository.visibility }}" == "public" ]; then
+          if [ "${GITHUB_EVENT_REPOSITORY_VISIBILITY}" == "public" ]; then
             echo "Repository is public, CodeQL is available"
             echo "codeql_enabled=true" >> "$GITHUB_OUTPUT"
             exit 0
