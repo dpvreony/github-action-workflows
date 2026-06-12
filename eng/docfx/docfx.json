@@ -4,7 +4,8 @@
         "src": [
             {
                 "files": [
-                    "*.sln"
+                    "*.sln",
+                    "*.slnx"
                 ],
                 "exclude": [
                     "*.Benchmarks/**",
