@@ -156,9 +156,7 @@ runs:
     - name: Report Changelog Summary
       shell: pwsh
       run: |
-        $changecommitlog = @'
-        $env:STEPS_CHANGELOG_OUTPUTS_COMMITLOG
-        '@
+        $changecommitlog = $env:STEPS_CHANGELOG_OUTPUTS_COMMITLOG
         $changecommitlog = $changecommitlog.Replace('"', '''')
         $lines = $changecommitlog -split "`n"
         foreach ($line in $lines) {
@@ -184,9 +182,7 @@ runs:
       shell: pwsh
       working-directory: a/src
       run: |
-        $env:CHANGE_COMMIT_LOG = @'
-        $env:STEPS_CHANGELOG_OUTPUTS_COMMITLOG
-        '@
+        $env:CHANGE_COMMIT_LOG = $env:STEPS_CHANGELOG_OUTPUTS_COMMITLOG
         $useSlnx = $false
         if (-not [bool]::TryParse("$env:INPUTS_USESLNX", [ref]$useSlnx)) {
           $useSlnx = $false
@@ -319,9 +315,7 @@ runs:
       shell: pwsh
       working-directory: a/src
       run: |
-        $env:CHANGE_COMMIT_LOG = @'
-        $env:STEPS_CHANGELOG_OUTPUTS_COMMITLOG
-        '@
+        $env:CHANGE_COMMIT_LOG = $env:STEPS_CHANGELOG_OUTPUTS_COMMITLOG
         $useSlnx = $false
         if (-not [bool]::TryParse("$env:INPUTS_USESLNX", [ref]$useSlnx)) {
           $useSlnx = $false
