@@ -215,12 +215,12 @@ runs:
           "cobertura",
           "--coverlet-include-directory",
           "${{ github.workspace }}/a/src/**/*.dll",
+          "--coverlet-exclude",
+          "GitHubActionsTestLogger.dll",
           "--long-running",
           "10",
           "--results-directory",
           "${{ github.workspace }}/artifacts/unittestcoverage",
-          "--coverlet-exclude-by-file",
-          "${{ github.workspace }}/a/src/**/*Json.Version.cs"
         )
 
         $p = Start-Process -FilePath "dotnet" -ArgumentList $args -NoNewWindow -PassThru
@@ -287,12 +287,12 @@ runs:
           "cobertura",
           "--coverlet-include-directory",
           "${{ github.workspace }}/a/src/**/*.dll",
+          "--coverlet-exclude",
+          "GitHubActionsTestLogger.dll",
           "--long-running",
           "10",
           "--results-directory",
           "${{ github.workspace }}/artifacts/inttestcoverage",
-          "--coverlet-exclude-by-file",
-          "${{ github.workspace }}/a/src/**/*Json.Version.cs"
         )
 
         $p = Start-Process -FilePath "dotnet" -ArgumentList $args -NoNewWindow -PassThru
