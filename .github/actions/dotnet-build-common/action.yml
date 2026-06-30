@@ -220,7 +220,7 @@ runs:
           "--long-running",
           "10",
           "--results-directory",
-          "${{ github.workspace }}/artifacts/unittestcoverage",
+          "${{ github.workspace }}/artifacts/unittestcoverage"
         )
 
         $p = Start-Process -FilePath "dotnet" -ArgumentList $args -NoNewWindow -PassThru
