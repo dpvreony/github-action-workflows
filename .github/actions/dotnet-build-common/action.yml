@@ -219,7 +219,7 @@ runs:
           "10",
           "--results-directory",
           "${{ github.workspace }}/artifacts/unittestcoverage",
-          "--exclude-by-file",
+          "--coverlet-exclude-by-file",
           "${{ github.workspace }}/a/src/**/*Json.Version.cs"
         )
 
@@ -290,8 +290,8 @@ runs:
           "--long-running",
           "10",
           "--results-directory",
-          "${{ github.workspace }}/artifacts/unittestcoverage",
-          "--exclude-by-file",
+          "${{ github.workspace }}/artifacts/inttestcoverage",
+          "--coverlet-exclude-by-file",
           "${{ github.workspace }}/a/src/**/*Json.Version.cs"
         )
 
