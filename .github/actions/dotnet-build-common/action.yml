@@ -210,17 +210,17 @@ runs:
           "--no-ansi",
           "--output",
           "detailed",
-          "--coverage",
-          "--coverage-output-format",
+          "--coverlet",
+          "--coverlet-output-format",
           "cobertura",
-          "--coverage-output",
-          "coverage.xml",
-          "--coverage-include",
+          "--coverlet-include-directory",
           "${{ github.workspace }}/a/src/**/*.dll",
           "--long-running",
           "10",
           "--results-directory",
-          "${{ github.workspace }}/artifacts/unittestcoverage"
+          "${{ github.workspace }}/artifacts/unittestcoverage",
+          "--exclude-by-file",
+          "${{ github.workspace }}/a/src/**/*Json.Version.cs"
         )
 
         $p = Start-Process -FilePath "dotnet" -ArgumentList $args -NoNewWindow -PassThru
@@ -282,17 +282,17 @@ runs:
           "--no-ansi",
           "--output",
           "detailed",
-          "--coverage",
-          "--coverage-output-format",
+          "--coverlet",
+          "--coverlet-output-format",
           "cobertura",
-          "--coverage-output",
-          "coverage.xml",
-          "--coverage-include",
+          "--coverlet-include-directory",
           "${{ github.workspace }}/a/src/**/*.dll",
           "--long-running",
           "10",
           "--results-directory",
-          "${{ github.workspace }}/artifacts/inttestcoverage"
+          "${{ github.workspace }}/artifacts/unittestcoverage",
+          "--exclude-by-file",
+          "${{ github.workspace }}/a/src/**/*Json.Version.cs"
         )
 
         $p = Start-Process -FilePath "dotnet" -ArgumentList $args -NoNewWindow -PassThru
