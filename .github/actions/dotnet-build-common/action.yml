@@ -253,7 +253,7 @@ runs:
     - name: Report Unit Test Coverage
       shell: pwsh
       run: |
-        $opencoverxmlpath = Get-ChildItem 'artifacts/unittestcoverage/coverage.xml' -ErrorAction SilentlyContinue | Select-Object -First 1
+        $opencoverxmlpath = Get-ChildItem 'artifacts/unittestcoverage/coverage.*.xml' -ErrorAction SilentlyContinue | Select-Object -First 1
         if ($opencoverxmlpath) {
           $xml = [xml](Get-Content $opencoverxmlpath)
           $lineRaw = $xml.coverage.'line-rate'
@@ -308,7 +308,7 @@ runs:
       if: inputs.runIntTests == 'true'
       shell: pwsh
       run: |
-        $opencoverxmlpath = Get-ChildItem 'artifacts/inttestcoverage/coverage.xml' -ErrorAction SilentlyContinue | Select-Object -First 1
+        $opencoverxmlpath = Get-ChildItem 'artifacts/inttestcoverage/coverage.*.xml' -ErrorAction SilentlyContinue | Select-Object -First 1
         if ($opencoverxmlpath) {
           $xml = [xml](Get-Content $opencoverxmlpath)
           $lineRaw = $xml.coverage.'line-rate'
