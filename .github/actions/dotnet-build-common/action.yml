@@ -215,6 +215,8 @@ runs:
           "cobertura",
           "--coverage-output",
           "coverage.xml",
+          "--coverage-include",
+          "${{ github.workspace }}/a/src/**/*.dll",
           "--long-running",
           "10",
           "--results-directory",
@@ -254,8 +256,11 @@ runs:
         $opencoverxmlpath = Get-ChildItem 'artifacts/unittestcoverage/coverage.xml' -ErrorAction SilentlyContinue | Select-Object -First 1
         if ($opencoverxmlpath) {
           $xml = [xml](Get-Content $opencoverxmlpath)
-          $unitTestCoverage = $xml.CoverageSession.Summary.branchCoverage
-          $coverageMessage = "Unit Test Coverage: $unitTestCoverage"
+          $lineRate = [double]$xml.coverage.'line-rate'
+          $branchRate = [double]$xml.coverage.'branch-rate'
+          $linePct = [math]::Round($lineRate * 100, 2)
+          $branchPct = [math]::Round($branchRate * 100, 2)
+          $coverageMessage = "Unit Test Coverage: Line $linePct%, Branch $branchPct%"
           Write-Output "::notice::$coverageMessage"
           Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value $coverageMessage
         }
@@ -282,6 +287,8 @@ runs:
           "cobertura",
           "--coverage-output",
           "coverage.xml",
+          "--coverage-include",
+          "${{ github.workspace }}/a/src/**/*.dll",
           "--long-running",
           "10",
           "--results-directory",
@@ -304,8 +311,11 @@ runs:
         $opencoverxmlpath = Get-ChildItem 'artifacts/inttestcoverage/coverage.xml' -ErrorAction SilentlyContinue | Select-Object -First 1
         if ($opencoverxmlpath) {
           $xml = [xml](Get-Content $opencoverxmlpath)
-          $intTestCoverage = $xml.CoverageSession.Summary.branchCoverage
-          $coverageMessage = "Integration Test Coverage: $intTestCoverage"
+          $lineRate = [double]$xml.coverage.'line-rate'
+          $branchRate = [double]$xml.coverage.'branch-rate'
+          $linePct = [math]::Round($lineRate * 100, 2)
+          $branchPct = [math]::Round($branchRate * 100, 2)
+          $coverageMessage = "Integration Test Coverage: Line $linePct%, Branch $branchPct%"
           Write-Output "::notice::$coverageMessage"
           Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value $coverageMessage
         }
