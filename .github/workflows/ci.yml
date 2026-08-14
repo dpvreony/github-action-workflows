@@ -68,8 +68,8 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Check for checkout action
-        id: get_username
-        uses: mikefarah/yq@master
-        with:
-          cmd: yq '.jobs[]?.steps[]? | select(.uses == "actions/checkout@v4" or (.uses|startswith("actions/checkout@"))) | select(.with.repository != null) | length' "$f"
+      #- name: Check for checkout action
+      #  id: get_username
+      #  uses: mikefarah/yq@v4.53.3
+      #  with:
+      #    cmd: yq '.jobs[]?.steps[]? | select(.uses == "actions/checkout@v4" or (.uses|startswith("actions/checkout@"))) | select(.with.repository != null) | length' "$f"
