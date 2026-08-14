@@ -207,6 +207,7 @@ runs:
           "--configuration",
           "Release",
           "/bl:${{ github.workspace }}/artifacts/binlog/unittest.binlog",
+          "--report-gh",
           "--no-ansi",
           "--output",
           "detailed",
