@@ -59,3 +59,17 @@ jobs:
 
       - name: Run zizmor
         uses: zizmorcore/zizmor-action@5f14fd08f7cf1cb1609c1e344975f152c7ee938d
+  enforce-checkout-ref:
+    name: enforce use of ref in checkout of common repo
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
+
+      - name: Check for checkout action
+        id: get_username
+        uses: mikefarah/yq@master
+        with:
+          cmd: yq '.jobs[]?.steps[]? | select(.uses == "actions/checkout@v4" or (.uses|startswith("actions/checkout@"))) | select(.with.repository != null) | length' "$f"
