@@ -59,11 +59,11 @@ jobs:
 
     - name: Prepare Artifact Directory
       run: |
-        mkdir -p artifacts/licenses
+        mkdir -p artifacts/licenses artifacts/binlog
 
     - name: Restore Packages
       run: |
-        dotnet restore "${solutionpath}" -- /bl:artifacts\\binlog\\restore.binlog
+        dotnet restore "${solutionpath}" /bl:${{ github.workspace }}/artifacts/binlog/restore.binlog
       working-directory: a/src
 
     - name: List licenses
