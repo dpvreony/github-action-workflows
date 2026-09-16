@@ -62,9 +62,18 @@ jobs:
         mkdir -p artifacts/licenses
 
     - name: Restore Packages
+      shell: pwsh
       run: |
-        dotnet restore "${solutionpath}" -- /bl:artifacts\\binlog\\restore.binlog
+        $useSlnx = $false
+        if (-not [bool]::TryParse("$env:INPUTS_USESLNX", [ref]$useSlnx)) {
+          $useSlnx = $false
+        }
+        $solutionExt = if ($useSlnx) { 'slnx' } else { 'sln' }
+        dotnet restore "$env:INPUTS_SOLUTIONNAME.$solutionExt" -- /bl:artifacts\binlog\restore.binlog
       working-directory: a/src
+      env:
+        INPUTS_USESLNX: ${{ inputs.useSlnx }}
+        INPUTS_SOLUTIONNAME: ${{ inputs.solutionName }}
 
     - name: List licenses
       run: |
