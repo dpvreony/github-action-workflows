@@ -75,7 +75,7 @@ jobs:
     steps:
       # linux runner runs out of diskspace on non-trivial builds
       - name: Free Disk Space
-        uses: endersonmenezes/free-disk-space@v4
+        uses: endersonmenezes/free-disk-space@2a22f8c59cae9cddae7194b33e6b92d023b2b4b8 #v4
         with:
           remove_haskell: true
           remove_packages: "google-cloud-cli azure-cli"
