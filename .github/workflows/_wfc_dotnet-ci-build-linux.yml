@@ -73,6 +73,13 @@ jobs:
       inttestprojectpath: ${{ inputs.solutionName }}.IntegrationTests/${{ inputs.solutionName }}.IntegrationTests.csproj
       benchmarkprojectpath: ${{ inputs.solutionName }}.Benchmarks/${{ inputs.solutionName }}.Benchmarks.csproj
     steps:
+      # linux runner runs out of diskspace on non-trivial builds
+      - name: Free Disk Space
+        uses: endersonmenezes/free-disk-space@v4
+        with:
+          remove_haskell: true
+          remove_packages: "google-cloud-cli azure-cli"
+
       # Two-checkout pattern: checkout triggering repo and this repo for action access
       - name: Checkout repository being built
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
