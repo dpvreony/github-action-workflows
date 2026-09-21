@@ -250,7 +250,7 @@ jobs:
       (needs.check-nuget-user-populated.outputs.has_nuget_user == 'true' || needs.check-nuget-api-key-populated.outputs.has_api_key == 'true')
     steps:
       - name: Check if 'release' environment exists and has protection rules
-        uses: dpvreony/ensure-environment-protected@af96e7c8e3da8ca6733c01647a8629a47d983ba6 # 1.0.0
+        uses: dpvreony/ensure-environment-protected@d7b554c080d283732a6da8f806f004114d1a0f0a # 1.0.1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           environment_name: 'release'
