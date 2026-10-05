@@ -45,6 +45,10 @@ inputs:
     description: 'API Documentation generation tool. Set to "DocFx" to enable DocFX metadata generation, or any other value to disable it.'
     required: false
     default: 'DocFx'
+  nugetValidationWarnOnly:
+    description: 'Whether to only warn when doing nuget package validation'
+    required: false
+    default: 'false'
   syncFusionLicense:
     description: 'License key to apply to Syncfusion components'
     required: false
@@ -327,7 +331,20 @@ runs:
         STEPS_CHANGELOG_OUTPUTS_COMMITLOG: ${{ steps.changelog.outputs.commitLog }}
         INPUTS_USESLNX: ${{ inputs.useSlnx }}
         INPUTS_SOLUTIONNAME: ${{ inputs.solutionName }}
-    
+
+    - name: Validate Nuget Packages
+      if: inputs.isPrimaryBuildOs == 'true'
+      shell: pwsh
+      run: |
+        if ('${{ inputs.nugetValidationWarnOnly }}' -eq 'true')
+        {
+          dotnet meziantou.validate-nuget-package "${{ github.workspace }}/artifacts/nuget" --only-report-errors
+        }
+        else
+        {
+          dotnet meziantou.validate-nuget-package "${{ github.workspace }}/artifacts/nuget"
+        }
+
     - name: Generate SBOM
       if: inputs.isPrimaryBuildOs == 'true' && inputs.produceNugetPackages == 'true'
       shell: pwsh
