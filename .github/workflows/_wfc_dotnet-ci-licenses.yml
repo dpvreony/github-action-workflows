@@ -29,18 +29,21 @@ jobs:
       solutionpath: ${{ inputs.solutionName }}.${{ inputs.useSlnx && 'slnx' || 'sln' }}
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6.0.1
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         path: a
+        persist-credentials: false
 
     - name: Checkout dpvreony/github-action-workflow
-      uses: actions/checkout@v6.0.1
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         repository: dpvreony/github-action-workflows
+        ref: ${{ job.workflow_sha }}
         path: github-action-workflows
+        persist-credentials: false
 
     - name: Install .NET
-      uses: actions/setup-dotnet@v5
+      uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
       with:
         global-json-file: "github-action-workflows/eng/licenses/global.json"
 
@@ -59,19 +62,28 @@ jobs:
         mkdir -p artifacts/licenses
 
     - name: Restore Packages
+      shell: pwsh
       run: |
-        dotnet restore ${{ env.solutionpath }} -- /bl:artifacts\\binlog\\restore.binlog
+        $useSlnx = $false
+        if (-not [bool]::TryParse("$env:INPUTS_USESLNX", [ref]$useSlnx)) {
+          $useSlnx = $false
+        }
+        $solutionExt = if ($useSlnx) { 'slnx' } else { 'sln' }
+        dotnet restore "$env:INPUTS_SOLUTIONNAME.$solutionExt" -- /bl:artifacts\binlog\restore.binlog
       working-directory: a/src
+      env:
+        INPUTS_USESLNX: ${{ inputs.useSlnx }}
+        INPUTS_SOLUTIONNAME: ${{ inputs.solutionName }}
 
     - name: List licenses
       run: |
-        dotnet nuget-license -i ${{ github.workspace }}/a/src/${{ env.solutionpath }} -t -o Json -fo ${{ github.workspace }}/artifacts/licenses/licenses.json
+        dotnet nuget-license -i "${{ github.workspace }}/a/src/${solutionpath}" -t -o Json -fo "${{ github.workspace }}/artifacts/licenses/licenses.json"
       working-directory:
         github-action-workflows/eng/licenses
 
     - name: store licenses
       if: ${{ always() }}
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
       with:
         name: licenses
         path: artifacts/licenses

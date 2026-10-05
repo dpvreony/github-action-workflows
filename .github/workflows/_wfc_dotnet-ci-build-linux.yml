@@ -16,6 +16,11 @@ on:
         type: boolean
         default: true
         description: 'If true, this OS will upload release artifacts (nuget packages, SBOM, etc.)'
+      produceNugetPackages:
+        required: false
+        type: boolean
+        default: false
+        description: 'If true, NuGet packages will be produced, SBOM generated, and VirusTotal scanned'
       runIntTests:
         required: false
         type: boolean
@@ -42,6 +47,8 @@ on:
         required: false
       CODECOV_TOKEN:
         required: false
+      SYNCFUSION_LICENSE_KEY:
+        required: false
     outputs:
       nbgv:
         description: 'NBGV SemVer2 version'
@@ -66,19 +73,29 @@ jobs:
       inttestprojectpath: ${{ inputs.solutionName }}.IntegrationTests/${{ inputs.solutionName }}.IntegrationTests.csproj
       benchmarkprojectpath: ${{ inputs.solutionName }}.Benchmarks/${{ inputs.solutionName }}.Benchmarks.csproj
     steps:
+      # linux runner runs out of diskspace on non-trivial builds
+      - name: Free Disk Space
+        uses: endersonmenezes/free-disk-space@2a22f8c59cae9cddae7194b33e6b92d023b2b4b8 #v4
+        with:
+          remove_haskell: true
+          remove_packages: "google-cloud-cli azure-cli"
+
       # Two-checkout pattern: checkout triggering repo and this repo for action access
       - name: Checkout repository being built
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           path: a
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Checkout github-action-workflows (actions & scripts)
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: dpvreony/github-action-workflows
+          ref: ${{ job.workflow_sha }}
           path: github-action-workflows
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Run Common Build Steps
         id: common-build
@@ -90,10 +107,11 @@ jobs:
           runIntTests: ${{ inputs.runIntTests }}
           osName: linux
           workloads: ${{ inputs.workloads }}
-          codecovToken: ${{ secrets.CODECOV_TOKEN }}
+          produceNugetPackages: ${{ inputs.produceNugetPackages }}
           sonarToken: ${{ secrets.SONAR_TOKEN }}
           sonarProjectKey: ${{ secrets.SONAR_PROJECT_KEY }}
           sonarOrganisationKey: ${{ secrets.SONAR_ORGANISATION_KEY }}
           githubToken: ${{ secrets.GITHUB_TOKEN }}
           virusTotalApiKey: ${{ secrets.VIRUSTOTAL_API_KEY }}
           apiDocumentation: ${{ inputs.apiDocumentation }}
+          syncfusionLicense: ${{ secrets.SYNCFUSION_LICENSE_KEY }}

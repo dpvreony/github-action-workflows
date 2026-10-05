@@ -13,9 +13,9 @@ This repository contains a reusable GitHub Actions workflow for building, analyz
 |-------|----------|------|---------|-------------|
 | `solutionName` | **Yes** | `string` | — | Name of the solution file **without** the extension (e.g., `MySolution` not `MySolution.sln`). This value is also used to derive the paths for unit tests (`{solutionName}.UnitTests`), integration tests (`{solutionName}.IntegrationTests`), and benchmarks (`{solutionName}.Benchmarks`). |
 | `useSlnx` | No | `boolean` | `false` | When set to `true`, uses the new `.slnx` XML-based solution format instead of the traditional `.sln` format. The `.slnx` format is a simplified, XML-based solution file format introduced in .NET 9. |
-| `buildOs` | No | `string` | `linux` | Specifies the primary operating system for building, packing, and generating release artifacts. Valid values: `linux` or `windows`. The primary OS is responsible for creating NuGet packages, SBOM, and other release artifacts. |
+| `primary-build-mode` | No | `string` | `linux-only` | Specifies the primary build mode. Valid values: `linux-only`, `linux-primary-and-windows-secondary`, `linux-secondary-and-windows-primary`, `windows-only`. Controls which OS(es) run the build, and which OS generates release artifacts (NuGet packages, SBOM, etc.). |
 | `requiresMacOS` | No | `boolean` | `false` | When set to `true`, enables additional build and test execution on macOS. Note: macOS builds are for validation only and never generate release artifacts. Useful for ensuring cross-platform compatibility. |
-| `runIntTestsOnPrimaryOsOnly` | No | `boolean` | `false` | When set to `true`, integration tests will only run on the primary build OS (specified by `buildOs`). Useful when integration tests only support a specific runtime, such as WPF binaries that only work on Windows. |
+| `integration-test-os` | No | `string` | `both` | Controls which OS runs integration tests when `primary-build-mode` is `linux-primary-and-windows-secondary` or `linux-secondary-and-windows-primary`. Valid values: `both`, `linux`, `windows`. Ignored when `primary-build-mode` is `linux-only` or `windows-only`. Useful when integration tests only support a specific runtime, such as WPF binaries that only work on Windows. |
 | `workloads` | No | `string` | `''` (empty) | Comma-separated list of .NET workloads to install before building (e.g., `"android,aspire,maui"`). When empty, no workloads are installed. Common workloads include: `android`, `aspire`, `ios`, `tvos`, `macos`, `maui`, `wasm-tools`. Note: Some workloads are platform-specific (e.g., `ios`, `tvos`, `macos`, and `maui` are not supported on Linux). |
 
 ### Secrets
@@ -34,15 +34,18 @@ This repository contains a reusable GitHub Actions workflow for building, analyz
 
 The workflow supports building and testing on multiple operating systems:
 
-- **Linux (default):** The default primary OS for building, packing, and testing. All release artifacts are generated on Linux by default.
-- **Windows:** Can be configured as the primary OS for building and packing when required. Set `buildOs: windows` to use Windows as the primary build OS.
-- **macOS (optional):** Can be enabled for additional build and test coverage. macOS builds never generate release artifacts. Enable with `requiresMacOS: true`.
+- **Linux only (default):** The default primary build mode. Linux is the primary OS for building, packing, and testing. All release artifacts are generated on Linux.
+- **Linux primary, Windows secondary:** Both Linux and Windows build and test. Linux is the primary OS and generates release artifacts. Use `primary-build-mode: linux-primary-and-windows-secondary`.
+- **Linux secondary, Windows primary:** Both Linux and Windows build and test. Windows is the primary OS and generates release artifacts. Use this when Windows platform-specific builds produce artifacts that can't run on Linux (e.g., .NET Framework, WPF, Windows-native dependencies). Use `primary-build-mode: linux-secondary-and-windows-primary`.
+- **Windows only:** Windows is the sole and primary OS for building, packing, and testing. Use `primary-build-mode: windows-only`.
+- **macOS (optional):** Can be enabled for additional build and test coverage regardless of `primary-build-mode`. macOS builds never generate release artifacts. Enable with `requiresMacOS: true`.
 
 **Key behaviors:**
-- Only the **primary OS** (specified by `buildOs`) generates and uploads release artifacts (NuGet packages, SBOM, etc.)
-- When the primary OS is set to Windows, Linux does not run build/pack operations to avoid duplicate artifacts
+- Only the **primary OS** generates and uploads release artifacts (NuGet packages, SBOM, etc.)
+- In `linux-primary-and-windows-secondary` mode, Linux generates release artifacts
+- In `linux-secondary-and-windows-primary` mode, Windows generates release artifacts
 - macOS builds, when enabled, only build and test - they never pack or release
-- Test coverage is uploaded only from the primary OS
+- Test coverage is stored as a workflow artifact by the primary OS build and uploaded to Codecov by the dedicated `upload-coverage` job
 - Binlog artifacts are OS-specific and include the OS name in the artifact name
 
 ## Jobs Overview
@@ -59,7 +62,7 @@ The workflow consists of several jobs, many of which delegate their logic to ded
 | `check-codeql-enabled`    | Checks if CodeQL should run based on repository visibility and Advanced Security settings | `_wfc_dotnet-ci-check-codeql-enabled.yml`             |
 | `check-nuget-user-populated` | Checks if NUGET_USER secret is set | Inline                                                |
 | `check-nuget-trusted-publisher-valid` | Validates NuGet Trusted Publisher login before approval by testing NuGet/login@v1 action | Inline (uses `NuGet/login@v1`)  |
-| `check-nuget-environment` | Validates NuGet environment protection               | Inline (uses `dpvreony/ensure-environment-protected`)  |
+| `check-release-environment` | Validates release environment protection               | Inline (uses `dpvreony/ensure-environment-protected`)  |
 | `check-release-required`  | Determines if a release is needed based on code changes | Inline (compares changes since last release)       |
 | `codeql`                  | Performs CodeQL security analysis on C# code         | `_wfc_dotnet-ci-codeql.yml`                           |
 | `dependency-review`       | Reviews new/changed dependencies (PR only)           | Inline (uses `actions/dependency-review-action`)       |
@@ -68,6 +71,7 @@ The workflow consists of several jobs, many of which delegate their logic to ded
 | `omd-generation`          | Generates object-modeling technique (OMT) diagrams   | `_wfc_dotnet-ci-omd-generation.yml`                   |
 | `release`                 | Creates a GitHub release and pushes NuGet packages using Trusted Publishers (OIDC) | Inline (uses `actions/create-release` & `NuGet/login@v1`) |
 | `snitch`                  | A tool that helps you find duplicate transitive package references | `_wfc_dotnet-ci-snitch.yml`                           |
+| `upload-coverage`         | Downloads the `unittestcoverage` artifact and uploads it to Codecov; runs as a downstream job so a Codecov upload failure can be retried without rebuilding | `_wfc_dotnet-ci-build.yml` (inline) |
 | `validate-renovate`       | Validates Renovate configuration                     | Inline (uses `dpvreony/github-action-renovate-config-validator`) |
 | `vulnerable-nuget-packages` | Checks for vulnerable NuGet packages               | `_wfc_dotnet-ci-vulnerable-nuget-packages.yml`        |
 
@@ -183,15 +187,31 @@ with:
   solutionName: MySolution
 ```
 
-**Windows as primary OS:**
+**Windows as primary OS (windows-only):**
 ```yaml
 uses: dpvreony/github-action-workflows/.github/workflows/dotnet-ci.yml@main
 with:
   solutionName: MySolution
-  buildOs: windows
+  primary-build-mode: windows-only
 ```
 
-**Linux with additional macOS builds:**
+**Linux primary, Windows secondary (cross-platform build, Linux publishes):**
+```yaml
+uses: dpvreony/github-action-workflows/.github/workflows/dotnet-ci.yml@main
+with:
+  solutionName: MySolution
+  primary-build-mode: linux-primary-and-windows-secondary
+```
+
+**Linux secondary, Windows primary (Windows-platform build, Windows publishes):**
+```yaml
+uses: dpvreony/github-action-workflows/.github/workflows/dotnet-ci.yml@main
+with:
+  solutionName: MySolution
+  primary-build-mode: linux-secondary-and-windows-primary
+```
+
+**Linux-only with additional macOS builds:**
 ```yaml
 uses: dpvreony/github-action-workflows/.github/workflows/dotnet-ci.yml@main
 with:
@@ -199,41 +219,41 @@ with:
   requiresMacOS: true
 ```
 
-**Windows with additional macOS builds:**
+**Windows-only with additional macOS builds:**
 ```yaml
 uses: dpvreony/github-action-workflows/.github/workflows/dotnet-ci.yml@main
 with:
   solutionName: MySolution
-  buildOs: windows
+  primary-build-mode: windows-only
   requiresMacOS: true
 ```
 
-**Windows-only integration tests (e.g., WPF projects):**
+**Windows-only integration tests (e.g., WPF projects) with linux-primary-and-windows-secondary build:**
 ```yaml
 uses: dpvreony/github-action-workflows/.github/workflows/dotnet-ci.yml@main
 with:
   solutionName: MySolution
-  buildOs: windows
-  runIntTestsOnPrimaryOsOnly: true  # Integration tests only run on Windows
+  primary-build-mode: linux-primary-and-windows-secondary
+  integration-test-os: windows  # Integration tests only run on Windows
 ```
 
-**Using .slnx with Windows build:**
+**Using .slnx with Windows-only build:**
 ```yaml
 uses: dpvreony/github-action-workflows/.github/workflows/dotnet-ci.yml@main
 with:
   solutionName: MySolution
   useSlnx: true
-  buildOs: windows
+  primary-build-mode: windows-only
 ```
 
 ### .NET Workload Usage Examples
 
-**.NET MAUI project (Windows):**
+**.NET MAUI project (Windows-only):**
 ```yaml
 uses: dpvreony/github-action-workflows/.github/workflows/dotnet-ci.yml@main
 with:
   solutionName: MyMauiApp
-  buildOs: windows
+  primary-build-mode: windows-only
   workloads: "android,ios,macos,maui"
 ```
 
@@ -258,7 +278,7 @@ with:
 uses: dpvreony/github-action-workflows/.github/workflows/dotnet-ci.yml@main
 with:
   solutionName: MyMultiPlatformApp
-  buildOs: windows
+  primary-build-mode: windows-only
   workloads: "android,aspire,maui,wasm-tools"
 ```
 
@@ -273,9 +293,9 @@ jobs:
     with:
       solutionName: MySolution          # Required: solution name without extension
       useSlnx: false                    # Optional: use .slnx format (default: false)
-      buildOs: linux                    # Optional: primary build OS (default: linux)
+      primary-build-mode: linux-only    # Optional: build mode (default: linux-only)
       requiresMacOS: false              # Optional: enable macOS builds (default: false)
-      runIntTestsOnPrimaryOsOnly: false # Optional: run int tests only on primary OS (default: false)
+      integration-test-os: both        # Optional: OS for integration tests when linux-primary-and-windows-secondary or linux-secondary-and-windows-primary (default: both)
       workloads: ""                     # Optional: comma-separated workloads (default: empty)
     secrets:
       NUGET_USER: ${{ secrets.NUGET_USER }}                       # For Trusted Publishers (OIDC)
@@ -317,6 +337,7 @@ secrets:
 
 - **Multi-OS Support:** Build and test on Linux, Windows, and macOS with configurable primary OS for releases.
 - **Modular Design:** Uses sub-workflows for modularity and reusability.
+- **Resilient Coverage Upload:** Code coverage is stored as a workflow artifact during the build and uploaded to Codecov in a separate downstream job (`upload-coverage`). If the Codecov upload fails, the lightweight downstream job can be re-run independently without triggering a full rebuild.
 - **Security:** Checks for environment protection before NuGet release. Includes CodeQL security analysis for public repositories and private repositories with Advanced Security enabled.
 - **Smart Release Detection:** Automatically determines if a release is needed by comparing changes since the last release, excluding test files.
 - **Old Build Protection:** Prevents outdated builds from triggering releases when a newer release already exists.

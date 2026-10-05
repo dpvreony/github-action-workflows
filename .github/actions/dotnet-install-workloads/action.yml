@@ -11,7 +11,7 @@ runs:
     - name: Install DotNet workloads
       shell: pwsh
       run: |
-        $workloadsInput = '${{ inputs.workloads }}'
+        $workloadsInput = "$env:INPUTS_WORKLOADS"
         
         if ([string]::IsNullOrWhiteSpace($workloadsInput)) {
           Write-Output "::notice::No workloads specified, skipping workload installation"
@@ -59,3 +59,5 @@ runs:
         Write-Output "::notice::All workloads installed successfully"
         Write-Output "Listing installed workloads:"
         dotnet workload list
+      env:
+        INPUTS_WORKLOADS: ${{ inputs.workloads }}

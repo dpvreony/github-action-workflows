@@ -29,18 +29,21 @@ jobs:
       solutionpath: ${{ inputs.solutionName }}.${{ inputs.useSlnx && 'slnx' || 'sln' }}
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6.0.1
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         path: a
+        persist-credentials: false
 
     - name: Checkout dpvreony/github-action-workflow
-      uses: actions/checkout@v6.0.1
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         repository: dpvreony/github-action-workflows
+        ref: ${{ job.workflow_sha }}
         path: github-action-workflows
+        persist-credentials: false
 
     - name: Install .NET
-      uses: actions/setup-dotnet@v5
+      uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
       with:
         global-json-file: "a/global.json"
 
@@ -55,18 +58,18 @@ jobs:
 
     - name: Restore Packages
       run: |
-        dotnet restore ${{ env.solutionpath }} -- /bl:artifacts\binlog\restore.binlog
+        dotnet restore $env:solutionpath -- /bl:artifacts\binlog\restore.binlog
       working-directory: a/src
 
-    - name: List vulnerable packages
+    - name: List deprecated packages
       run: |
-        dotnet list package --deprecated --format json --include-transitive >> ${{ github.workspace }}/artifacts/nuget-deprecated/output.json
+        dotnet list package --deprecated --format json --include-transitive | Tee-Object -FilePath "${{ github.workspace }}/artifacts/nuget-deprecated/output.json"
       working-directory:
         a/src
 
     - name: store vulnerable package output
       if: ${{ always() }}
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
       with:
         name: nuget-deprecated
         path: artifacts/nuget-deprecated

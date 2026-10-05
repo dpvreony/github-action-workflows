@@ -4,7 +4,7 @@ on:
   push:
     branches: [ main ]
   pull_request:
-    types: [opened, synchronize, reopened, closed]
+    types: [opened, synchronize, reopened]
     branches: [ main ]
 
 permissions:
@@ -24,18 +24,52 @@ jobs:
     uses: ./.github/workflows/dotnet-ci.yml
     with:
       solutionName: "Workflow"
-      buildOs: "windows"
-      workloads: "android,aspire,ios,tvos,macos,maui"
+      primary-build-mode: "linux-secondary-and-windows-primary"
+      workloads: "android,ios,tvos,macos,maui"
       apiDocumentation: "DocFx"
 
   actionlint:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
       - name: Download actionlint
         id: get_actionlint
         run: bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/refs/tags/v1.7.9/scripts/download-actionlint.bash)
         shell: bash
       - name: Check workflow files
-        run: ${{ steps.get_actionlint.outputs.executable }} -color
+        run: ${STEPS_GET_ACTIONLINT_OUTPUTS_EXECUTABLE} -color
         shell: bash
+        env:
+          STEPS_GET_ACTIONLINT_OUTPUTS_EXECUTABLE: ${{ steps.get_actionlint.outputs.executable }}
+
+  zizmor:
+    name: Run zizmor
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
+
+      - name: Run zizmor
+        uses: zizmorcore/zizmor-action@5f14fd08f7cf1cb1609c1e344975f152c7ee938d
+  enforce-checkout-ref:
+    name: enforce use of ref in checkout of common repo
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
+
+      #- name: Check for checkout action
+      #  id: get_username
+      #  uses: mikefarah/yq@v4.53.3
+      #  with:
+      #    cmd: yq '.jobs[]?.steps[]? | select(.uses == "actions/checkout@v4" or (.uses|startswith("actions/checkout@"))) | select(.with.repository != null) | length' "$f"

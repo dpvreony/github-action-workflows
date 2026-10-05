@@ -16,6 +16,11 @@ on:
         type: boolean
         default: false
         description: 'If true, this OS will upload release artifacts (nuget packages, SBOM, etc.)'
+      produceNugetPackages:
+        required: false
+        type: boolean
+        default: false
+        description: 'If true, NuGet packages will be produced, SBOM generated, and VirusTotal scanned'
       runIntTests:
         required: false
         type: boolean
@@ -41,6 +46,8 @@ on:
       VIRUSTOTAL_API_KEY:
         required: false
       CODECOV_TOKEN:
+        required: false
+      SYNCFUSION_LICENSE_KEY:
         required: false
     outputs:
       nbgv:
@@ -68,20 +75,26 @@ jobs:
     steps:
       # Two-checkout pattern: checkout triggering repo and this repo for action access
       - name: Checkout repository being built
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           path: a
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Checkout github-action-workflows (actions & scripts)
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: dpvreony/github-action-workflows
+          ref: ${{ job.workflow_sha }}
           path: github-action-workflows
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3.2.2
+        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+        with:
+          packages: 'platform-tools'
+
       - name: Install Android SDK
         run: |
           $sdkmanagerpath = Get-ChildItem "C:\Android\android-sdk\cmdline-tools\**\bin\sdkmanager.bat" | Select-Object -First 1
@@ -101,10 +114,11 @@ jobs:
           runIntTests: ${{ inputs.runIntTests }}
           osName: windows
           workloads: ${{ inputs.workloads }}
-          codecovToken: ${{ secrets.CODECOV_TOKEN }}
+          produceNugetPackages: ${{ inputs.produceNugetPackages }}
           sonarToken: ${{ secrets.SONAR_TOKEN }}
           sonarProjectKey: ${{ secrets.SONAR_PROJECT_KEY }}
           sonarOrganisationKey: ${{ secrets.SONAR_ORGANISATION_KEY }}
           githubToken: ${{ secrets.GITHUB_TOKEN }}
           virusTotalApiKey: ${{ secrets.VIRUSTOTAL_API_KEY }}
           apiDocumentation: ${{ inputs.apiDocumentation }}
+          syncfusionLicense: ${{ secrets.SYNCFUSION_LICENSE_KEY }}

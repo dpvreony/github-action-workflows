@@ -11,21 +11,21 @@ on:
         type: boolean
         default: false
         description: 'If true, uses .slnx solution format instead of .sln'
-      buildOs:
+      primary-build-mode:
         required: false
         type: string
-        default: 'linux'
-        description: 'Primary OS for build and pack. Valid values: "linux" or "windows". Default: "linux"'
+        default: 'linux-only'
+        description: 'Primary build mode. Valid values: "linux-only", "linux-primary-and-windows-secondary", "linux-secondary-and-windows-primary", "windows-only". Default: "linux-only"'
       requiresMacOS:
         required: false
         type: boolean
         default: false
         description: 'If true, also builds and tests on macOS (never releases from macOS)'
-      runIntTestsOnPrimaryOsOnly:
+      integration-test-os:
         required: false
-        type: boolean
-        default: false
-        description: 'If true, integration tests will only run on the primary build OS'
+        type: string
+        default: 'both'
+        description: 'Controls which OS runs integration tests when primary-build-mode is "linux-primary-and-windows-secondary" or "linux-secondary-and-windows-primary". Valid values: "both", "linux", "windows". Ignored when primary-build-mode is "linux-only" or "windows-only". Default: "both"'
       workloads:
         required: false
         type: string
@@ -36,6 +36,11 @@ on:
         type: string
         default: 'DocFx'
         description: 'API Documentation generation tool. Set to "DocFx" to enable DocFX metadata generation, or any other value to disable it.'
+      produceNugetPackages:
+        required: false
+        type: boolean
+        default: false
+        description: 'If true, NuGet packages will be produced, SBOM generated, and VirusTotal scanned'
     secrets:
       SONAR_TOKEN:
         required: false
@@ -46,6 +51,8 @@ on:
       VIRUSTOTAL_API_KEY:
         required: false
       CODECOV_TOKEN:
+        required: false
+      SYNCFUSION_LICENSE_KEY:
         required: false
     outputs:
       nbgv:
@@ -59,47 +66,62 @@ jobs:
   validate-inputs:
     runs-on: ubuntu-latest
     steps:
-      - name: Validate buildOs input
+      - name: Validate primary-build-mode input
         run: |
-          if [[ "${{ inputs.buildOs }}" != "linux" && "${{ inputs.buildOs }}" != "windows" ]]; then
-            echo "::error::Invalid buildOs value '${{ inputs.buildOs }}'. Valid values are 'linux' or 'windows'."
+          if [[ "${INPUTS_PRIMARY_BUILD_MODE}" != "linux-only" && "${INPUTS_PRIMARY_BUILD_MODE}" != "linux-primary-and-windows-secondary" && "${INPUTS_PRIMARY_BUILD_MODE}" != "linux-secondary-and-windows-primary" && "${INPUTS_PRIMARY_BUILD_MODE}" != "windows-only" ]]; then
+            echo "::error::Invalid primary-build-mode value '${INPUTS_PRIMARY_BUILD_MODE}'. Valid values are 'linux-only', 'linux-primary-and-windows-secondary', 'linux-secondary-and-windows-primary', or 'windows-only'."
             exit 1
           fi
+        env:
+          INPUTS_PRIMARY_BUILD_MODE: ${{ inputs['primary-build-mode'] }}
+      - name: Validate integration-test-os input
+        run: |
+          if [[ "${INPUTS_INTEGRATION_TEST_OS}" != "both" && "${INPUTS_INTEGRATION_TEST_OS}" != "linux" && "${INPUTS_INTEGRATION_TEST_OS}" != "windows" ]]; then
+            echo "::error::Invalid integration-test-os value '${INPUTS_INTEGRATION_TEST_OS}'. Valid values are 'both', 'linux', or 'windows'."
+            exit 1
+          fi
+        env:
+          INPUTS_INTEGRATION_TEST_OS: ${{ inputs['integration-test-os'] }}
 
   build-linux:
     needs: validate-inputs
+    if: inputs['primary-build-mode'] == 'linux-only' || inputs['primary-build-mode'] == 'linux-primary-and-windows-secondary' || inputs['primary-build-mode'] == 'linux-secondary-and-windows-primary'
     uses: ./.github/workflows/_wfc_dotnet-ci-build-linux.yml
     with:
       solutionName: ${{ inputs.solutionName }}
       useSlnx: ${{ inputs.useSlnx }}
-      isPrimaryBuildOs: ${{ inputs.buildOs == 'linux' }}
-      runIntTests: ${{ !inputs.runIntTestsOnPrimaryOsOnly || inputs.buildOs == 'linux' }}
+      isPrimaryBuildOs: ${{ inputs['primary-build-mode'] == 'linux-only' || inputs['primary-build-mode'] == 'linux-primary-and-windows-secondary' }}
+      runIntTests: ${{ inputs['primary-build-mode'] == 'linux-only' || inputs['integration-test-os'] == 'both' || inputs['integration-test-os'] == 'linux' }}
       workloads: ${{ inputs.workloads }}
       apiDocumentation: ${{ inputs.apiDocumentation }}
+      produceNugetPackages: ${{ inputs.produceNugetPackages }}
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
       SONAR_ORGANISATION_KEY: ${{ secrets.SONAR_ORGANISATION_KEY }}
       VIRUSTOTAL_API_KEY: ${{ secrets.VIRUSTOTAL_API_KEY }}
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      SYNCFUSION_LICENSE_KEY: ${{ secrets.SYNCFUSION_LICENSE_KEY }}
 
   build-windows:
     needs: validate-inputs
-    if: inputs.buildOs == 'windows'
+    if: inputs['primary-build-mode'] == 'windows-only' || inputs['primary-build-mode'] == 'linux-primary-and-windows-secondary' || inputs['primary-build-mode'] == 'linux-secondary-and-windows-primary'
     uses: ./.github/workflows/_wfc_dotnet-ci-build-windows.yml
     with:
       solutionName: ${{ inputs.solutionName }}
       useSlnx: ${{ inputs.useSlnx }}
-      isPrimaryBuildOs: true
-      runIntTests: ${{ !inputs.runIntTestsOnPrimaryOsOnly || inputs.buildOs == 'windows' }}
+      isPrimaryBuildOs: ${{ inputs['primary-build-mode'] == 'windows-only' || inputs['primary-build-mode'] == 'linux-secondary-and-windows-primary' }}
+      runIntTests: ${{ inputs['primary-build-mode'] == 'windows-only' || inputs['integration-test-os'] == 'both' || inputs['integration-test-os'] == 'windows' }}
       workloads: ${{ inputs.workloads }}
       apiDocumentation: ${{ inputs.apiDocumentation }}
+      produceNugetPackages: ${{ inputs.produceNugetPackages }}
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
       SONAR_ORGANISATION_KEY: ${{ secrets.SONAR_ORGANISATION_KEY }}
       VIRUSTOTAL_API_KEY: ${{ secrets.VIRUSTOTAL_API_KEY }}
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      SYNCFUSION_LICENSE_KEY: ${{ secrets.SYNCFUSION_LICENSE_KEY }}
 
   build-macos:
     needs: validate-inputs
@@ -108,8 +130,41 @@ jobs:
     with:
       solutionName: ${{ inputs.solutionName }}
       useSlnx: ${{ inputs.useSlnx }}
-      runIntTests: ${{ !inputs.runIntTestsOnPrimaryOsOnly }}
+      runIntTests: true
       workloads: ${{ inputs.workloads }}
       apiDocumentation: ${{ inputs.apiDocumentation }}
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      SYNCFUSION_LICENSE_KEY: ${{ secrets.SYNCFUSION_LICENSE_KEY }}
+
+  upload-coverage:
+    needs: [build-linux, build-windows, build-macos]
+    if: |
+      always() &&
+      !cancelled() &&
+      (needs.build-linux.result == 'success' || needs.build-windows.result == 'success' || needs.build-macos.result == 'success')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download unit test coverage artifact
+        id: download-coverage
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: unittestcoverage
+          path: artifacts/unittestcoverage
+        continue-on-error: true
+
+      - name: Upload Coverage to Codecov
+        if: steps.download-coverage.outcome == 'success'
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        shell: bash
+        run: |
+          if [ -z "$CODECOV_TOKEN" ]; then
+            echo "::notice::CODECOV_TOKEN not configured, skipping coverage upload."
+            exit 0
+          fi
+          curl -Os https://uploader.codecov.io/latest/linux/codecov
+          curl -Os https://uploader.codecov.io/latest/linux/codecov.SHA256SUM
+          sha256sum --check codecov.SHA256SUM
+          chmod +x codecov
+          ./codecov -s 'artifacts/unittestcoverage' -f '*.xml' -v -t "$CODECOV_TOKEN"
