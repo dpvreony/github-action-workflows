@@ -364,14 +364,14 @@ runs:
 
     - name: store binlogs
       if: failure()
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         name: binlogs-${{ inputs.osName }}
         path: artifacts/binlog
     
     - name: store unit test coverage
       if: inputs.isPrimaryBuildOs == 'true'
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         name: unittestcoverage
         path: artifacts/unittestcoverage
@@ -379,14 +379,14 @@ runs:
     
     - name: store integration test coverage
       if: inputs.isPrimaryBuildOs == 'true' && inputs.runIntTests == 'true'
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         name: inttestcoverage
         path: artifacts/inttestcoverage
     
     - name: store nuget packages
       if: inputs.isPrimaryBuildOs == 'true' && inputs.produceNugetPackages == 'true'
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         name: nuget
         path: artifacts/nuget
@@ -394,28 +394,28 @@ runs:
     
     - name: store omd
       if: inputs.isPrimaryBuildOs == 'true'
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         name: omd
         path: artifacts/omd
     
     - name: store sbom
       if: inputs.isPrimaryBuildOs == 'true' && inputs.produceNugetPackages == 'true'
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         name: sbom
         path: artifacts/sbom
     
     - name: store outdated
       if: inputs.isPrimaryBuildOs == 'true'
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         name: outdated
         path: artifacts/outdated
 
     - name: store docfx
       if: inputs.isPrimaryBuildOs == 'true' && inputs.apiDocumentation == 'DocFx'
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         name: docfx
         path: artifacts/docfx
