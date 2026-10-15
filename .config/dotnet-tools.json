@@ -59,7 +59,7 @@
       "rollForward": false
     },
     "gripe-msbuildlogstats": {
-      "version": "2.1.3",
+      "version": "2.1.34",
       "commands": [
         "gripe-msbuildlogstats"
       ],
