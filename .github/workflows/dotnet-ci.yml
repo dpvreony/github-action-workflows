@@ -12,6 +12,11 @@ on:
         type: boolean
         default: false
         description: 'If true, uses .slnx solution format instead of .sln'
+      package_lock:
+        required: false
+        type: string
+        default: 'enabled'
+        description: 'Use NuGet locked mode on restore (dotnet restore --locked-mode). Must be "enabled" or "disabled"'
       primary-build-mode:
         required: false
         type: string
@@ -72,6 +77,7 @@ jobs:
     with:
       solutionName: ${{ inputs.solutionName }}
       useSlnx: ${{ inputs.useSlnx }}
+      package_lock: ${{ inputs.package_lock }}
       primary-build-mode: ${{ inputs['primary-build-mode'] }}
       requiresMacOS: ${{ inputs.requiresMacOS }}
       integration-test-os: ${{ inputs['integration-test-os'] }}
