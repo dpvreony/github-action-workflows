@@ -8,6 +8,10 @@ inputs:
     description: 'If true, uses .slnx solution format instead of .sln'
     required: false
     default: 'false'
+  package_lock:
+    description: 'Use NuGet locked mode on restore. Must be "enabled" or "disabled"'
+    required: false
+    default: 'enabled'
   isPrimaryBuildOs:
     description: 'If true, this OS will upload release artifacts'
     required: true
@@ -148,8 +152,15 @@ runs:
           $useSlnx = $false
         }
         $solutionExt = if ($useSlnx) { 'slnx' } else { 'sln' }
-        dotnet restore "$env:INPUTS_SOLUTIONNAME.$solutionExt" /bl:${{ github.workspace }}/artifacts/binlog/restore.binlog
+        $restoreArgs = @()
+        switch ($env:INPUTS_PACKAGELOCK) {
+          'enabled' { $restoreArgs += '--locked-mode' }
+          'disabled' { }
+          default { throw "Invalid package_lock value '$env:INPUTS_PACKAGELOCK'. Must be 'enabled' or 'disabled'." }
+        }
+        dotnet restore "$env:INPUTS_SOLUTIONNAME.$solutionExt" @restoreArgs /bl:${{ github.workspace }}/artifacts/binlog/restore.binlog
       env:
+        INPUTS_PACKAGELOCK: ${{ inputs.package_lock }}
         INPUTS_USESLNX: ${{ inputs.useSlnx }}
         INPUTS_SOLUTIONNAME: ${{ inputs.solutionName }}
     
