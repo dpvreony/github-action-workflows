@@ -26,6 +26,11 @@ on:
         type: string
         default: ''
         description: 'Comma-separated list of .NET workloads to install'
+      workloadRestore:
+        required: false
+        type: boolean
+        default: false
+        description: 'Restore workloads required by the solution before restoring packages.'
       apiDocumentation:
         required: false
         type: string
@@ -77,5 +82,6 @@ jobs:
           runIntTests: ${{ inputs.runIntTests }}
           osName: macos
           workloads: ${{ inputs.workloads }}
+          workloadRestore: ${{ inputs.workloadRestore }}
           apiDocumentation: ${{ inputs.apiDocumentation }}
           syncfusionLicense: ${{ secrets.SYNCFUSION_LICENSE_KEY }}

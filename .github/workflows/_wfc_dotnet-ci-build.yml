@@ -36,6 +36,11 @@ on:
         type: string
         default: ''
         description: 'Comma-separated list of .NET workloads to install'
+      workloadRestore:
+        required: false
+        type: boolean
+        default: false
+        description: 'Restore workloads required by the solution before restoring packages.'
       apiDocumentation:
         required: false
         type: string
@@ -99,6 +104,7 @@ jobs:
       isPrimaryBuildOs: ${{ inputs['primary-build-mode'] == 'linux-only' || inputs['primary-build-mode'] == 'linux-primary-and-windows-secondary' }}
       runIntTests: ${{ inputs['primary-build-mode'] == 'linux-only' || inputs['integration-test-os'] == 'both' || inputs['integration-test-os'] == 'linux' }}
       workloads: ${{ inputs.workloads }}
+      workloadRestore: ${{ inputs.workloadRestore }}
       apiDocumentation: ${{ inputs.apiDocumentation }}
       produceNugetPackages: ${{ inputs.produceNugetPackages }}
     secrets:
@@ -120,6 +126,7 @@ jobs:
       isPrimaryBuildOs: ${{ inputs['primary-build-mode'] == 'windows-only' || inputs['primary-build-mode'] == 'linux-secondary-and-windows-primary' }}
       runIntTests: ${{ inputs['primary-build-mode'] == 'windows-only' || inputs['integration-test-os'] == 'both' || inputs['integration-test-os'] == 'windows' }}
       workloads: ${{ inputs.workloads }}
+      workloadRestore: ${{ inputs.workloadRestore }}
       apiDocumentation: ${{ inputs.apiDocumentation }}
       produceNugetPackages: ${{ inputs.produceNugetPackages }}
     secrets:
@@ -140,6 +147,7 @@ jobs:
       package_lock: ${{ inputs.package_lock }}
       runIntTests: true
       workloads: ${{ inputs.workloads }}
+      workloadRestore: ${{ inputs.workloadRestore }}
       apiDocumentation: ${{ inputs.apiDocumentation }}
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
