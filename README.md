@@ -18,6 +18,7 @@ This repository contains a reusable GitHub Actions workflow for building, analyz
 | `requiresMacOS` | No | `boolean` | `false` | When set to `true`, enables additional build and test execution on macOS. Note: macOS builds are for validation only and never generate release artifacts. Useful for ensuring cross-platform compatibility. |
 | `integration-test-os` | No | `string` | `both` | Controls which OS runs integration tests when `primary-build-mode` is `linux-primary-and-windows-secondary` or `linux-secondary-and-windows-primary`. Valid values: `both`, `linux`, `windows`. Ignored when `primary-build-mode` is `linux-only` or `windows-only`. Useful when integration tests only support a specific runtime, such as WPF binaries that only work on Windows. |
 | `workloads` | No | `string` | `''` (empty) | Comma-separated list of .NET workloads to install before building (e.g., `"android,aspire,maui"`). When empty, no workloads are installed. Common workloads include: `android`, `aspire`, `ios`, `tvos`, `macos`, `maui`, `wasm-tools`. Note: Some workloads are platform-specific (e.g., `ios`, `tvos`, `macos`, and `maui` are not supported on Linux). |
+| `workloadRestore` | No | `boolean` | `false` | When enabled, runs `dotnet workload restore` for the configured solution in `src` before explicit package restores in the selected OS builds and the licenses, vulnerable-package and deprecated-package jobs. This is separate from the explicit `workloads` list; workload availability depends on the OS. |
 
 ### Secrets
 

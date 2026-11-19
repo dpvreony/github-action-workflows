@@ -45,6 +45,10 @@ inputs:
     description: 'Comma-separated list of .NET workloads to install'
     required: false
     default: ''
+  workloadRestore:
+    description: 'Restore workloads required by the solution before restoring packages'
+    required: false
+    default: 'false'
   apiDocumentation:
     description: 'API Documentation generation tool. Set to "DocFx" to enable DocFX metadata generation, or any other value to disable it.'
     required: false
@@ -143,6 +147,13 @@ runs:
         New-Item -ItemType Directory -Force -Path artifacts/binlog | Out-Null
         New-Item -ItemType Directory -Force -Path artifacts/docfx | Out-Null
     
+    - name: Restore .NET workloads
+      if: inputs.workloadRestore == 'true'
+      uses: ./github-action-workflows/.github/actions/dotnet-restore-workloads
+      with:
+        solutionName: ${{ inputs.solutionName }}
+        useSlnx: ${{ inputs.useSlnx }}
+
     - name: Restore Packages
       shell: pwsh
       working-directory: a/src
