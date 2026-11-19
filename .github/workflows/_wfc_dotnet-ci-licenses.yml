@@ -17,6 +17,11 @@ on:
         type: string
         default: ''
         description: 'Comma-separated list of .NET workloads to install'
+      workloadRestore:
+        required: false
+        type: boolean
+        default: false
+        description: 'Restore workloads required by the solution before restoring packages.'
 
 jobs:
   licenses-run:
@@ -60,6 +65,13 @@ jobs:
     - name: Prepare Artifact Directory
       run: |
         mkdir -p artifacts/licenses
+
+    - name: Restore .NET workloads
+      if: inputs.workloadRestore
+      uses: ./github-action-workflows/.github/actions/dotnet-restore-workloads
+      with:
+        solutionName: ${{ inputs.solutionName }}
+        useSlnx: ${{ inputs.useSlnx }}
 
     - name: Restore Packages
       shell: pwsh

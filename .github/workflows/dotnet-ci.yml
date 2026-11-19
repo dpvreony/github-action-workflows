@@ -41,7 +41,7 @@ on:
         required: false
         type: boolean
         default: false
-        description: 'Restore workloads required by the solution before restoring packages in each OS build.'
+        description: 'Restore workloads required by the solution before explicit package restores in build and analysis jobs.'
       publish-targets:
         required: false
         type: string
@@ -104,6 +104,7 @@ jobs:
       solutionName: ${{ inputs.solutionName }}
       useSlnx: ${{ inputs.useSlnx }}
       workloads: ${{ inputs.workloads }}
+      workloadRestore: ${{ inputs.workloadRestore }}
 
   snitch:
     uses: ./.github/workflows/_wfc_dotnet-ci-snitch.yml
@@ -157,6 +158,7 @@ jobs:
       solutionName: ${{ inputs.solutionName }}
       useSlnx: ${{ inputs.useSlnx }}
       workloads: ${{ inputs.workloads }}
+      workloadRestore: ${{ inputs.workloadRestore }}
 
   deprecated-nuget-packages:
     uses: ./.github/workflows/_wfc_dotnet-ci-deprecated-nuget-packages.yml
@@ -164,6 +166,7 @@ jobs:
       solutionName: ${{ inputs.solutionName }}
       useSlnx: ${{ inputs.useSlnx }}
       workloads: ${{ inputs.workloads }}
+      workloadRestore: ${{ inputs.workloadRestore }}
 
   check-codeql-enabled:
     uses: ./.github/workflows/_wfc_dotnet-ci-check-codeql-enabled.yml

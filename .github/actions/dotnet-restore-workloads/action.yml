@@ -1,0 +1,25 @@
+name: 'Restore .NET Workloads'
+description: 'Restores workloads required by the configured solution'
+inputs:
+  solutionName:
+    description: 'Name of the solution file WITHOUT the extension'
+    required: true
+  useSlnx:
+    description: 'If true, uses .slnx solution format instead of .sln'
+    required: false
+    default: 'false'
+runs:
+  using: 'composite'
+  steps:
+    - name: Restore .NET workloads
+      shell: pwsh
+      working-directory: a/src
+      run: |
+        $solutionExt = if ($env:INPUTS_USESLNX -eq 'true') { 'slnx' } else { 'sln' }
+        dotnet workload restore "$env:INPUTS_SOLUTIONNAME.$solutionExt"
+        if ($LASTEXITCODE -ne 0) {
+          exit $LASTEXITCODE
+        }
+      env:
+        INPUTS_USESLNX: ${{ inputs.useSlnx }}
+        INPUTS_SOLUTIONNAME: ${{ inputs.solutionName }}

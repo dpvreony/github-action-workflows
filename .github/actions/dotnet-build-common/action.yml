@@ -149,17 +149,10 @@ runs:
     
     - name: Restore .NET workloads
       if: inputs.workloadRestore == 'true'
-      shell: pwsh
-      working-directory: a/src
-      run: |
-        $solutionExt = if ($env:INPUTS_USESLNX -eq 'true') { 'slnx' } else { 'sln' }
-        dotnet workload restore "$env:INPUTS_SOLUTIONNAME.$solutionExt"
-        if ($LASTEXITCODE -ne 0) {
-          exit $LASTEXITCODE
-        }
-      env:
-        INPUTS_USESLNX: ${{ inputs.useSlnx }}
-        INPUTS_SOLUTIONNAME: ${{ inputs.solutionName }}
+      uses: ./github-action-workflows/.github/actions/dotnet-restore-workloads
+      with:
+        solutionName: ${{ inputs.solutionName }}
+        useSlnx: ${{ inputs.useSlnx }}
 
     - name: Restore Packages
       shell: pwsh
