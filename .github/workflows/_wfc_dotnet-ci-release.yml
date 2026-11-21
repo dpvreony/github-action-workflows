@@ -52,6 +52,14 @@ jobs:
       DOTNET_NOLOGO: true
       DOTNET_GENERATE_ASPNET_CERTIFICATE: false
     steps:
+    - name: Checkout github-action-workflows (actions)
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      with:
+        repository: dpvreony/github-action-workflows
+        ref: ${{ job.workflow_sha }}
+        path: github-action-workflows
+        persist-credentials: false
+
     - name: Cancel old pending releases
       env:
         GH_TOKEN: ${{ github.token }}
@@ -181,32 +189,10 @@ jobs:
           exit 1
         fi
 
-    - name: NuGet login (OIDC → temp API key)
-      uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1
-      if: inputs.has_nuget == 'true' && inputs.has_nuget_user == 'true'
-      id: nuget-login
+    - name: Publish NuGet packages
+      if: inputs.has_nuget == 'true'
+      uses: ./github-action-workflows/.github/actions/publish-nuget-packages
       with:
-        user: ${{ secrets.NUGET_USER }}
-    
-    - name: NuGet Push (Trusted Publisher)
-      if: inputs.has_nuget == 'true' && inputs.has_nuget_user == 'true'
-      env:
-        NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
-        SOURCE_URL: https://api.nuget.org/v3/index.json
-      working-directory: nuget
-      run: |
-        echo "::notice::Using Trusted Publishers (OIDC) for NuGet push..."
-        for package in *.nupkg; do
-          dotnet nuget push -s "$SOURCE_URL" -k "$NUGET_API_KEY" "$package"
-        done
-
-    - name: NuGet Push (API_KEY)
-      env:
-        NUGET_AUTH_TOKEN: ${{ secrets.NUGET_API_KEY }}
-        SOURCE_URL: https://api.nuget.org/v3/index.json
-      if: inputs.has_nuget == 'true' && inputs.has_api_key == 'true'
-      working-directory: nuget
-      run: |
-        for package in *.nupkg; do
-          dotnet nuget push -s "$SOURCE_URL" -k "$NUGET_AUTH_TOKEN" "$package"
-        done
+        nuget-user: ${{ inputs.has_nuget_user == 'true' && secrets.NUGET_USER || '' }}
+        nuget-api-key: ${{ inputs.has_api_key == 'true' && secrets.NUGET_API_KEY || '' }}
+        package-path: nuget
