@@ -47,6 +47,11 @@ on:
         type: string
         default: 'nuget'
         description: 'Comma-separated list of publish targets. Valid values: "nuget" (publish NuGet packages and create a GitHub release), "actions" (create GitHub release only, no NuGet required), "publish" (dotnet publish - reserved for future use). Default: "nuget"'
+      nuget_mode:
+        required: false
+        type: string
+        default: 'full'
+        description: 'NuGet publishing mode. "full" also runs the GitHub release task; "package_only" skips that task so a caller can publish the nuget artifact separately. Default: "full".'
       apiDocumentation:
         required: false
         type: string
@@ -71,6 +76,28 @@ on:
         required: false
       SYNCFUSION_LICENSE_KEY:
         required: false
+    outputs:
+      nbgv:
+        description: 'NBGV SemVer2 version from the primary build'
+        value: ${{ jobs.build.outputs.nbgv }}
+      change_commit_log:
+        description: 'Change commit log from the primary build'
+        value: ${{ jobs.build.outputs.change_commit_log }}
+      run_release:
+        description: 'Whether the existing release decision is satisfied'
+        value: ${{ jobs.debug-release-values.outputs.run_release }}
+      release_environment_result:
+        description: 'Outcome of the release environment protection check'
+        value: ${{ jobs.check-release-environment.outputs.check_result }}
+      has_nuget:
+        description: 'Whether NuGet is a publish target'
+        value: ${{ jobs.check-publish-targets.outputs.has_nuget }}
+      has_nuget_user:
+        description: 'Whether a NuGet Trusted Publisher user is configured'
+        value: ${{ jobs.check-nuget-user-populated.outputs.has_nuget_user }}
+      has_api_key:
+        description: 'Whether a NuGet API key is configured'
+        value: ${{ jobs.check-nuget-api-key-populated.outputs.has_api_key }}
 
 jobs:
   build:
@@ -252,6 +279,8 @@ jobs:
       contents: read
       deployments: read
     runs-on: ubuntu-latest
+    outputs:
+      check_result: ${{ steps.check.outcome }}
     needs:
       - check-nuget-user-populated
       - check-nuget-api-key-populated
@@ -265,6 +294,7 @@ jobs:
       (needs.check-nuget-user-populated.outputs.has_nuget_user == 'true' || needs.check-nuget-api-key-populated.outputs.has_api_key == 'true')
     steps:
       - name: Check if 'release' environment exists and has protection rules
+        id: check
         uses: dpvreony/ensure-environment-protected@d7b554c080d283732a6da8f806f004114d1a0f0a # 1.0.1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -282,7 +312,16 @@ jobs:
         id: check
         env:
           PUBLISH_TARGETS: ${{ inputs.publish-targets }}
+          NUGET_MODE: ${{ inputs.nuget_mode }}
         run: |
+          case "$NUGET_MODE" in
+            package_only|full) ;;
+            *)
+              echo "::error::Invalid nuget_mode value '$NUGET_MODE'. Valid values are 'package_only' or 'full'."
+              exit 1
+              ;;
+          esac
+
           has_nuget=false
           has_actions=false
           has_publish=false
@@ -325,6 +364,7 @@ jobs:
   release:
     if: |
       always() &&
+      inputs.nuget_mode == 'full' &&
       needs.debug-release-values.outputs.run_release == 'true' &&
       needs.check-release-environment.result == 'success'
     needs: [build, check-release-required, debug-release-values, check-nuget-user-populated, check-nuget-api-key-populated, check-publish-targets, check-release-environment]

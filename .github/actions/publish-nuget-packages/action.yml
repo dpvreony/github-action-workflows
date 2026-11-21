@@ -1,0 +1,69 @@
+name: 'Publish NuGet Packages'
+description: 'Publishes downloaded NuGet packages to nuget.org using Trusted Publishers and/or an API key'
+inputs:
+  nuget-user:
+    description: 'NuGet.org profile name for Trusted Publishers authentication via OIDC'
+    required: false
+  nuget-api-key:
+    description: 'NuGet.org API key for publishing packages'
+    required: false
+  package-path:
+    description: 'Directory containing the downloaded .nupkg files'
+    required: false
+    default: 'nuget'
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate NuGet publishing inputs
+      shell: bash
+      env:
+        NUGET_USER: ${{ inputs.nuget-user }}
+        NUGET_API_KEY: ${{ inputs.nuget-api-key }}
+        PACKAGE_PATH: ${{ inputs.package-path }}
+      run: |
+        if [[ -z "$NUGET_USER" && -z "$NUGET_API_KEY" ]]; then
+          echo "::error::Provide nuget-user or nuget-api-key to publish packages."
+          exit 1
+        fi
+
+        shopt -s nullglob
+        packages=("$PACKAGE_PATH"/*.nupkg)
+        if (( ${#packages[@]} == 0 )); then
+          echo "::error::No .nupkg files found in '$PACKAGE_PATH'."
+          exit 1
+        fi
+
+    - name: NuGet login (OIDC)
+      if: inputs['nuget-user'] != ''
+      id: nuget-login
+      uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1
+      with:
+        user: ${{ inputs.nuget-user }}
+
+    - name: NuGet push (Trusted Publisher)
+      if: inputs['nuget-user'] != ''
+      shell: bash
+      env:
+        NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
+        PACKAGE_PATH: ${{ inputs.package-path }}
+        SOURCE_URL: https://api.nuget.org/v3/index.json
+      run: |
+        shopt -s nullglob
+        packages=("$PACKAGE_PATH"/*.nupkg)
+        for package in "${packages[@]}"; do
+          dotnet nuget push --source "$SOURCE_URL" --api-key "$NUGET_API_KEY" "$package"
+        done
+
+    - name: NuGet push (API key)
+      if: inputs['nuget-api-key'] != ''
+      shell: bash
+      env:
+        NUGET_API_KEY: ${{ inputs.nuget-api-key }}
+        PACKAGE_PATH: ${{ inputs.package-path }}
+        SOURCE_URL: https://api.nuget.org/v3/index.json
+      run: |
+        shopt -s nullglob
+        packages=("$PACKAGE_PATH"/*.nupkg)
+        for package in "${packages[@]}"; do
+          dotnet nuget push --source "$SOURCE_URL" --api-key "$NUGET_API_KEY" "$package"
+        done
