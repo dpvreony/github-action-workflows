@@ -19,6 +19,7 @@ This repository contains a reusable GitHub Actions workflow for building, analyz
 | `integration-test-os` | No | `string` | `both` | Controls which OS runs integration tests when `primary-build-mode` is `linux-primary-and-windows-secondary` or `linux-secondary-and-windows-primary`. Valid values: `both`, `linux`, `windows`. Ignored when `primary-build-mode` is `linux-only` or `windows-only`. Useful when integration tests only support a specific runtime, such as WPF binaries that only work on Windows. |
 | `workloads` | No | `string` | `''` (empty) | Comma-separated list of .NET workloads to install before building (e.g., `"android,aspire,maui"`). When empty, no workloads are installed. Common workloads include: `android`, `aspire`, `ios`, `tvos`, `macos`, `maui`, `wasm-tools`. Note: Some workloads are platform-specific (e.g., `ios`, `tvos`, `macos`, and `maui` are not supported on Linux). |
 | `workloadRestore` | No | `boolean` | `false` | When enabled, runs `dotnet workload restore` for the configured solution in `src` before explicit package restores in the selected OS builds and the licenses, vulnerable-package and deprecated-package jobs. This is separate from the explicit `workloads` list; workload availability depends on the OS. |
+| `nuget_mode` | No | `string` | `full` | `full` preserves the normal GitHub release and NuGet publishing task. `package_only` skips that task so a caller can publish the downloaded NuGet artifact separately with the `publish-nuget-packages` composite action. |
 
 ### Secrets
 
@@ -31,6 +32,60 @@ This repository contains a reusable GitHub Actions workflow for building, analyz
 | `SONAR_ORGANISATION_KEY` | No | Your SonarCloud organization key. Found in your SonarCloud organization settings. Required along with `SONAR_TOKEN` and `SONAR_PROJECT_KEY` for SonarCloud analysis. |
 | `VIRUSTOTAL_API_KEY` | No | API key for VirusTotal scanning of NuGet packages. When configured, uploads packages to VirusTotal for malware scanning before release. Obtain from your VirusTotal account. |
 | `CODECOV_TOKEN` | No | Upload token for Codecov code coverage reporting. When configured, uploads test coverage reports to Codecov for tracking and visualization. Obtain from your Codecov project settings. |
+
+## NuGet Publishing Modes
+
+The default `nuget_mode: full` preserves the existing release behavior, including the release job in `.github/workflows/dotnet-ci.yml`. With `nuget_mode: package_only`, the build still creates the `nuget` artifact when NuGet is a publish target and credentials are configured, but the shared workflow does not publish packages or create a GitHub release. The caller must handle publication.
+
+The following caller moves the release job out while retaining the existing release decision, environment protection check, GitHub release and NuGet publishing:
+
+```yaml
+jobs:
+  build:
+    permissions:
+      actions: write
+      contents: write
+      deployments: read
+      pages: write
+      id-token: write
+      pull-requests: write
+      packages: read
+      security-events: write
+    uses: dpvreony/github-action-workflows/.github/workflows/dotnet-ci.yml@main
+    with:
+      solutionName: MySolution
+      nuget_mode: package_only
+      apiDocumentation: None
+    secrets:
+      NUGET_USER: ${{ secrets.NUGET_USER }}
+      NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+
+  release:
+    needs: build
+    if: |
+      needs.build.outputs.run_release == 'true' &&
+      needs.build.outputs.release_environment_result == 'success'
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+      actions: write
+    uses: dpvreony/github-action-workflows/.github/workflows/_wfc_dotnet-ci-release.yml@main
+    with:
+      nbgv: ${{ needs.build.outputs.nbgv }}
+      change_commit_log: ${{ needs.build.outputs.change_commit_log }}
+      has_nuget: ${{ needs.build.outputs.has_nuget }}
+      has_nuget_user: ${{ needs.build.outputs.has_nuget_user }}
+      has_api_key: ${{ needs.build.outputs.has_api_key }}
+      apiDocumentation: None
+    secrets:
+      NUGET_USER: ${{ secrets.NUGET_USER }}
+      NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+```
+
+Use matching pinned refs for both workflow calls. The release workflow uses the `publish-nuget-packages` composite action; callers can instead use that action directly after downloading the `nuget` artifact into `nuget`. Pass `nuget-user` and/or `nuget-api-key`, and grant `id-token: write` for Trusted Publishers. When both credentials are supplied, the action attempts both methods, matching the existing release workflow.
+
+The release decision compares source changes with the latest **GitHub release**. If publishing directly without creating a GitHub release, the caller must manage release/version decisions itself to avoid repeatedly publishing the same package version. Use a protected `release` environment for any separate publishing job.
 
 ## Multi-OS Build Support
 
